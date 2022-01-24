@@ -1,97 +1,93 @@
-class AsyncTask {
-  constructor(task, onFinish){
-    this.task = task;
-    this.onFinish = onFinish;
+const { shuffleArray } = require('../utils/function.js');
 
-    this.task();
-    this.onFinish();
-  }
-}
-
-// Method for performing the loop.
 const nextLoop = (() => {
-
-  // Check to see if we have access to the Node js event loop
   if (typeof setImmediate === 'function') {
     return setImmediate;
   }
-
-  // We dont have an event loop, lets create a mini delay instead
-  return args => setTimeout(this, 0);
+  return function(fn) { return setTimeout(fn, 0); };
 })();
 
+class WaitQueue {
 
-class AsyncList {
-
-  constructor(max_size=500){
-    this.tasks = [];
+  constructor() {
     this.queue = [];
-    this.max_size = max_size;
+    this.listeners = [];
   }
 
-  getlength(){
+  getArray(){
+    return this.queue;
+  }
+
+  getLength() {
     return this.queue.length;
   }
 
+  empty(){
+    this.queue = [];
+  }
+
   clear(){
-    this.queue = []; // Reset the stack.
+    this.queue = [];
   }
 
-  clearTasks(){
-    this.tasks = [];
+  clearListeners(){
+    for(const litener of this.listeners){
+      listener(new Error('Clear Listeners'));
+    }
+    this.listeners = [];
   }
 
-  async push(item) {
+  shuffle(){
+    this.queue = shuffleArray(this.queue)
+  }
+
+  unshift(item){
+    this.queue.unshift(item);
+    this._flush();
+    return this.queue.length;
+  }
+
+  push(item){
     this.queue.push(item);
     this._flush();
     return this.queue.length;
   }
 
-  async push_next() {
-
+  async shift(){
+    return new Promise((resolve, reject) => {
+      if(this.queue.length > 0){
+        return resolve(this.queue.shift());
+      }else{
+        this.listeners.push((err) => {
+          if(err)
+            return reject(err);
+          return resolve(this.queue.shift());
+        });
+      }
+    });
   }
 
-  // This method waits for a new item to be in the queue
-  // It returns when an item is found.
-  async wait_for_next() {
-
-    console.log('Waiting for item');
-
+  async pop(){
     return new Promise((resolve, reject) => {
-      // There is an item there now.  Woop!
-      if (this.queue.length > 0) {
-
-        console.log('Item in the queue');
+      if(this.queue.length > 0){
         return resolve(this.queue.pop());
-
-      } else {
-
-        console.log('No item.  Add task to the queue.');
-
-        // There is not an item.  Keep waiting.
-        this.tasks.push((err) => {
-          if (err) {
+      }else{
+        this.listeners.push((err) => {
+          if(err)
             return reject(err);
-          }
           return resolve(this.queue.pop());
         });
       }
     });
   }
 
-  _flush() {
-
-    console.log('Flushing.');
-
-    // Check if work needs to be performed.
-    if(this.queue.length > 0 && this.tasks.length  > 0){
-
-      // Grab the next task we want to perform.
-      const nextTask = this.tasks.shift();
-      nextTask.call(this);
-      nextLoop(this._flush.bind(this)); // Performt the loop
+  _flush(){
+    if(this.queue.length > 0 && this.listeners.length > 0){
+      const listener = this.listeners.shift();
+      listener.call(this);
+      nextLoop(this._flush.bind(this));
     }
   }
 }
 
-module.exports = AsyncList;
+module.exports = WaitQueue;

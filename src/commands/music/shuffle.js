@@ -9,8 +9,7 @@ module.exports = class ShuffleMusic extends Command {
       description: "Shuffle the songs in the queue.",
       category: "Music Player",
       usage: "shuffle",
-      aliases: ['sh'],
-      enabled = false
+      aliases: ['sh']
     });
 
     this.client = client;

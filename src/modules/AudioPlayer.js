@@ -2,7 +2,8 @@ const logger = require('./Logger.js');
 const Song = require('./song.js');
 const { shuffleArray, asyncCallWithTimeout } = require('../utils/function.js');
 
-const WaitQueue = require('wait-queue');
+// const WaitQueue = require('wait-queue');
+const WaitQueue = require('./asynclist.js');
 
 const {
   NoSubscriberBehavior,
@@ -125,16 +126,12 @@ class AudioPlayer {
 
   onSongFinish(){
     logger.log('Song has finished.');
-    this.processQueue
+    this.processQueue();
   }
 
   async enqueue(song) {
     await this.queue.push(song); // Add the new song
     await this.processQueue();
-  }
-
-  async getNextSong(){
-    return await this.queue.shift();
   }
 
   async processQueue(){
@@ -143,34 +140,42 @@ class AudioPlayer {
     if(this.queueLock || this.audioPlayer.state.status !== AudioPlayerStatus.Idle)
       return;
 
-    const getNextSong = new Promise((resolve, reject) => {
-      this.queue.shift().then((item) => {
-        resolve(item);
-      });
-    });
-
     let nextSong;
-
     try {
-      nextSong = await asyncCallWithTimeout(getNextSong, 1_000);
+      nextSong = await asyncCallWithTimeout(
+        new Promise(
+          (resolve, reject) => {
+            const result = this.queue.pop();
+            resolve(result);
+          }
+      ), 60_000); // Wait for a minute
     }catch(err){
 
-      console.log(err);
-
-      if(e === 'timeout'){
+      // Check if this was from a timeout.
+      if(err === 'timeout'){
+        // Get the guild id
         const guildID = this.voiceConnection.joinConfig.guildId;
+
+        // Have the player disconnect.
         await this.client.musicplayer.AnotherStop(guildID);
+      } else {
+        // Something else has happened.  That is not good.
+        console.log(err);
       }
 
       return;
     }
 
+    // Another song is in the queue.  Lets play it.
     try {
+
+      // Create the song and add it to the channel
       const songResource = await nextSong.createAudioResource();
-      console.log(songResource);
       this.audioPlayer.play(songResource);
       this.queueLock = false;
     }catch(error){
+
+      // Something has gone wrong.
       logger.error(error);
       this.queueLock = false;
       await this.processQueue();
@@ -196,11 +201,11 @@ class AudioPlayer {
   }
 
   async shuffle(){
-    this.queue = shuffleArray(this.queue);
+    this.queue.shuffle();
   }
 
   getQueue(){
-    return this.queue;
+    return this.queue.getArray();
   }
 }
 
