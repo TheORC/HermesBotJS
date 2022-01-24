@@ -125,7 +125,7 @@ class AudioPlayer {
 
   onSongFinish(){
     logger.log('Song has finished.');
-    this.processQueue();
+    this.processQueue
   }
 
   async enqueue(song) {
@@ -151,13 +151,18 @@ class AudioPlayer {
 
     let nextSong;
 
-    try{
+    try {
       nextSong = await asyncCallWithTimeout(getNextSong, 1_000);
-    }catch(e){
+    }catch(err){
+
+      console.log(err);
+
       if(e === 'timeout'){
         const guildID = this.voiceConnection.joinConfig.guildId;
-        return await this.client.musicplayer.AnotherStop(guildID);
+        await this.client.musicplayer.AnotherStop(guildID);
       }
+      
+      return;
     }
 
     try {
