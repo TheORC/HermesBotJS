@@ -134,9 +134,20 @@ class MusicController {
     }
   }
 
+  async AnotherStop(guildid){
+    const audioPlayer = this.getAudioPlayer(guildid);
+
+    if(!audioPlayer)
+      return console.log('This should not happen...');
+
+    audioPlayer.voiceConnection.destroy();
+    delete this.players[guildid];
+  }
+
   async Stop(message){
 
     const audioPlayer = this.getAudioPlayer(message.guild.id);
+
     if(!audioPlayer)
       return message.channel.send('The bot is not playing any music.');
 

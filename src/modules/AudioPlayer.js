@@ -152,10 +152,12 @@ class AudioPlayer {
     let nextSong;
 
     try{
-      nextSong = await asyncCallWithTimeout(getNextSong, 60_000);
+      nextSong = await asyncCallWithTimeout(getNextSong, 1_000);
     }catch(e){
-      if(e === 'timeout')
-        return;
+      if(e === 'timeout'){
+        const guildID = this.voiceConnection.joinConfig.guildId;
+        return await this.client.musicplayer.AnotherStop(guildID);
+      }
     }
 
     try {
