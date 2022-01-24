@@ -40,4 +40,15 @@ async function asyncSubFileSearch(dir, split) {
   return namedArray;
 }
 
-module.exports = { asyncSubFileSearch, isUrl, shuffleArray }
+const asyncCallWithTimeout = async (asyncPromise, timeLimit) => {
+  return Promise.race([
+      asyncPromise,
+      new Promise(function(resolve, reject){
+          setTimeout(function() {
+              reject('timeout');
+          }, timeLimit);
+      })
+  ]);
+}
+
+module.exports = { asyncSubFileSearch, isUrl, shuffleArray, asyncCallWithTimeout }

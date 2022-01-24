@@ -20,10 +20,24 @@ module.exports = class QueueMusic extends Command {
 
     const channel = message.member?.voice.channel;
 
+    // Make sure the member is in a channel.
     if(!channel)
       return message.channel.send('This command can only be used when in a voice channel.');
 
-    // We are in a voice channel
-    await this.client.musicplayer.Queue(message);
+    // Make sure the bot is in a channel.
+    const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
+    if(!audioPlayer)
+      return await message.channel.send('The bot is not currently in a channel.');
+
+    // We only message when there is a queue.
+    if(audioPlayer.getQueue().length == 0)
+      return await message.channel.send('There are no songs in queue.');
+
+    const reply = audioPlayer.getQueue()
+				.slice(0, 5)
+				.map((track, index) => `${index + 1}) ${track.title}`)
+				.join('\n');
+
+		await message.reply(`${reply}`);
   }
 };

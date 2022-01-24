@@ -18,6 +18,7 @@
     "ffmpeg-static": "^4.4.1",
     "lib": "^4.3.3",
     "libsodium-wrappers": "^0.7.9",
+    "wait-queue": "^1.1.4",
     "youtube-dl-exec": "^2.0.2",
     "youtube-sr": "^4.1.12",
     "yt-search": "^2.10.3",

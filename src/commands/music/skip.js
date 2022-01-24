@@ -17,12 +17,17 @@ module.exports = class SkipMusic extends Command {
 
   async run(message, args, level){
 
-    const channel = message.member?.voice.channel;
+    const channel = message.member.voice?.channel;
 
     if(!channel)
       return message.channel.send('This command can only be used when in a voice channel.');
 
+    const audioPlayer = this.client.musicplayer.getAudioPlayer(message.channel.guild.id);
+    if(!audioPlayer)
+      return await message.channel.send('The bot is not in a voice channel.');
+
     // We are in a voice channel, pause the song
-    await this.client.musicplayer.Skip(message);
+    await audioPlayer.skip();
+    await message.channel.send('The song has been skiped.');
   }
 }

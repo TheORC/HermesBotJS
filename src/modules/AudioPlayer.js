@@ -1,7 +1,8 @@
 const logger = require('./Logger.js');
 const Song = require('./song.js');
+const { shuffleArray, asyncCallWithTimeout } = require('../utils/function.js');
 
-const { shuffleArray } = require('../utils/function.js');
+const WaitQueue = require('wait-queue');
 
 const {
   NoSubscriberBehavior,
@@ -25,7 +26,7 @@ class AudioPlayer {
     this.audioPlayer = createAudioPlayer();
 
     // Create a song queue
-    this.queue = [];
+    this.queue = new WaitQueue();
     this.queueLock = false;
     this.readyLock = false;
 
@@ -114,7 +115,7 @@ class AudioPlayer {
 
   stop(){
     this.queueLock = true;
-    this.queue = [];
+    this.queue = new WaitQueue(); // Create a new queue
     this.audioPlayer.stop(true);
   }
 
@@ -128,19 +129,36 @@ class AudioPlayer {
   }
 
   async enqueue(song) {
-    this.queue.push(song);
+    await this.queue.push(song); // Add the new song
     await this.processQueue();
   }
 
+  async getNextSong(){
+    return await this.queue.shift();
+  }
+
   async processQueue(){
+
     // We are not in a position to play a song.
-    if(this.queueLock || this.audioPlayer.state.status !== AudioPlayerStatus.Idle || this.queue.length === 0)
+    if(this.queueLock || this.audioPlayer.state.status !== AudioPlayerStatus.Idle)
       return;
 
-    this.queueLock = true;
-    const nextSong = this.queue.shift();
+    const getNextSong = new Promise((resolve, reject) => {
+      this.queue.shift().then((item) => {
+        resolve(item);
+      });
+    });
+
+    let nextSong;
 
     try{
+      nextSong = await asyncCallWithTimeout(getNextSong, 60_000);
+    }catch(e){
+      if(e === 'timeout')
+        return;
+    }
+
+    try {
       const songResource = await nextSong.createAudioResource();
       this.audioPlayer.play(songResource);
       this.queueLock = false;
@@ -149,6 +167,10 @@ class AudioPlayer {
       this.queueLock = false;
       await this.processQueue();
     }
+  }
+
+  getStatus(){
+    return this.audioPlayer.state?.status;
   }
 
   async pause(){

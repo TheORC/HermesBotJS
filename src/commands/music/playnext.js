@@ -3,15 +3,15 @@ const Command = require("../../base/Command.js");
 
 const { getVoiceConnection } = require('@discordjs/voice');
 
-module.exports = class PlayMusic extends Command {
+module.exports = class PlayNextMusic extends Command {
 
   constructor(client){
     super(client, {
-      name: "play",
-      description: "Plays a song in your channel.",
+      name: "playnext",
+      description: "Plays a song next in your channel.",
       category: "Music Player",
-      usage: "play [song name or url]",
-      aliases: ["p", "pl"]
+      usage: "playnext [song name or url]",
+      aliases: ["pn"]
     });
     this.client = client;
   }
