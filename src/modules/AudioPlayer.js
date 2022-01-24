@@ -26,7 +26,7 @@ class AudioPlayer {
     this.audioPlayer = createAudioPlayer();
 
     // Create a song queue
-    this.queue = new WaitQueue();
+    this.queue = new WaitQueue(); // :O
     this.queueLock = false;
     this.readyLock = false;
 
@@ -161,12 +161,13 @@ class AudioPlayer {
         const guildID = this.voiceConnection.joinConfig.guildId;
         await this.client.musicplayer.AnotherStop(guildID);
       }
-      
+
       return;
     }
 
     try {
       const songResource = await nextSong.createAudioResource();
+      console.log(songResource);
       this.audioPlayer.play(songResource);
       this.queueLock = false;
     }catch(error){
@@ -202,6 +203,5 @@ class AudioPlayer {
     return this.queue;
   }
 }
-
 
 module.exports = AudioPlayer;

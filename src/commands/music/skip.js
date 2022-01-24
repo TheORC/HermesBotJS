@@ -9,7 +9,8 @@ module.exports = class SkipMusic extends Command {
       description: "Skips the current song.",
       category: "Music Player",
       usage: "skip",
-      aliases: []
+      aliases: [],
+      enabled = false
     });
 
     this.client = client;

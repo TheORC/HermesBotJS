@@ -33,8 +33,9 @@ module.exports = class QueueMusic extends Command {
     if(audioPlayer.getQueue().length == 0)
       return await message.channel.send('There are no songs in queue.');
 
-    const reply = audioPlayer.getQueue()
-				.slice(0, 5)
+    const queue = audioPlayer.getQueue(); // []
+    const reply = queue
+        .slice(0, 5)
 				.map((track, index) => `${index + 1}) ${track.title}`)
 				.join('\n');
 
