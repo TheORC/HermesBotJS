@@ -3,6 +3,10 @@ const logger = require('../modules/Logger.js');
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
 
+function isNumeric(num){
+  return !isNaN(num);
+}
+
 function msToString(millis) {
 
   const minutes = Math.floor(millis / 60000);
@@ -67,5 +71,6 @@ module.exports = {
   isUrl,
   shuffleArray,
   asyncCallWithTimeout,
-  msToString
+  msToString,
+  isNumeric
 }

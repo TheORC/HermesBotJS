@@ -99,7 +99,6 @@ class MusicController {
           return message.channel.send(`An error occured processing that song.  Please try again.`);
         });
 
-        console.log(info);
         logger.log(`info: ${info}`);
 
         // Make sure a video result is returned.

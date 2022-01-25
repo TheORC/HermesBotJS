@@ -39,7 +39,11 @@ class Song {
 
       process.once('spawn', () => {
         demuxProbe(stream).then((probe) => {
-          resolve(createAudioResource(probe.stream, { metadata: this, inputType: probe.type}));
+          resolve(createAudioResource(probe.stream, {
+              metadata: this,
+              inputType: probe.type,
+              inlineVolume: true
+          }));
         }).catch(onError);
       }).catch(onError);
     });

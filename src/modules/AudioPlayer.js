@@ -31,6 +31,7 @@ class AudioPlayer {
     this.queueLock = false;
     this.readyLock = false;
 
+    this.volume = 0.5;
     this.currentSong = {};
     this.currentResorce = {};
 
@@ -132,6 +133,41 @@ class AudioPlayer {
     this.processQueue();
   }
 
+  getStatus(){
+    return this.audioPlayer.state?.status;
+  }
+
+  getCurrentSong(){
+    return this.currentSong;
+  }
+
+  setVolume(volume){
+    this.volume = volume;
+    this.currentResorce.volume.setVolume(volume);
+  }
+
+  async pause(){
+    await this.audioPlayer.pause();
+  }
+
+  async resume(){
+    await this.audioPlayer.unpause();
+  }
+
+  // When we stop the audioplayer, the onStateChange event
+  // will handle the switch to the next song.
+  async skip(){
+    await this.audioPlayer.stop();
+  }
+
+  async shuffle(){
+    this.queue.shuffle();
+  }
+
+  getQueue(){
+    return this.queue.getArray();
+  }
+
   async enqueue(song) {
     await this.queue.push(song); // Add the new song
     await this.processQueue();
@@ -172,9 +208,9 @@ class AudioPlayer {
     // Another song is in the queue.  Lets play it.
     try {
 
-
       // Create the song and add it to the channel
       const songResource = await nextSong.createAudioResource();
+      songResource.volume.setVolume(this.volume);
 
       this.currentSong = nextSong;
       this.currentResorce = songResource;
@@ -189,36 +225,6 @@ class AudioPlayer {
       this.queueLock = false;
       await this.processQueue();
     }
-  }
-
-  getStatus(){
-    return this.audioPlayer.state?.status;
-  }
-
-  getCurrentSong(){
-    return this.currentSong;
-  }
-
-  async pause(){
-    await this.audioPlayer.pause();
-  }
-
-  async resume(){
-    await this.audioPlayer.unpause();
-  }
-
-  // When we stop the audioplayer, the onStateChange event
-  // will handle the switch to the next song.
-  async skip(){
-    await this.audioPlayer.stop();
-  }
-
-  async shuffle(){
-    this.queue.shuffle();
-  }
-
-  getQueue(){
-    return this.queue.getArray();
   }
 }
 
