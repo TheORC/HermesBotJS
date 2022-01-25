@@ -32,7 +32,10 @@ class AudioPlayer {
     this.readyLock = false;
 
     this.volume = 0.5;
+
     this.loopSong = false;
+    this.loopSongSkip = false;
+
     this.loopPlaylist = false;
     this.currentSong = {};
     this.currentResorce = {};
@@ -167,16 +170,19 @@ class AudioPlayer {
 
   setLoopSong() {
     this.loopSong = true; // Toggle
+    this.loopSongSkip = false;
     this.loopPlaylist = false;
   }
 
   setLoopPlaylist(){
     this.loopPlaylist = true;
     this.loopSong = false;
+    this.loopSongSkip = false;
   }
 
   disableLoop(){
     this.loopSong = false;
+    this.loopSongSkip = false;
     this.loopPlaylist = false;
   }
 
@@ -190,7 +196,11 @@ class AudioPlayer {
 
   // When we stop the audioplayer, the onStateChange event
   // will handle the switch to the next song.
-  async skip(){
+  async skip() {
+
+    if(this.loopSong)
+      this.loopSongSkip = true; // We need to go to the next song.
+
     await this.audioPlayer.stop();
   }
 
@@ -223,13 +233,15 @@ class AudioPlayer {
     try {
 
       // Check if we should loop this song.
-      if(this.loopSong && this.currentSong) {
+      if (this.loopSong && this.currentSong && !this.loopSongSkip) {
         console.log('Looping song.');
         nextSong = this.currentSong;
       } else {
 
+        this.loopSongSkip = false;
+
         // Get the next song
-        nextSong = await asyncCallWithTimeout(
+        nextSong = await asyncCallWithTimeout (
           new Promise(
             (resolve, reject) => {
               const result = this.queue.pop();
@@ -238,13 +250,13 @@ class AudioPlayer {
         ), 60_000); // Wait for a minute
 
         // Make sure to add the song back to the queue.
-        if(this.loopPlaylist && this.currentSong)
+        if (this.loopPlaylist && this.currentSong)
           await this.queue.push(this.currentSong);
       }
-    }catch(err){
+    } catch(err) {
 
       // Check if this was from a timeout.
-      if(err === 'timeout'){
+      if(err === 'timeout') {
         // Get the guild id
         const guildID = this.voiceConnection.joinConfig.guildId;
 
@@ -271,7 +283,7 @@ class AudioPlayer {
       this.audioPlayer.play(songResource);
       this.queueLock = false;
 
-    }catch(error){
+    } catch(error) {
 
       // Something has gone wrong.
       logger.error(error);

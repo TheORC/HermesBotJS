@@ -16,7 +16,7 @@ module.exports = class NowMusic extends Command {
       description: "Shows the current song being played.",
       category: "Music Player",
       usage: "now",
-      aliases: []
+      aliases: ['nowplaying', 'np']
     });
 
     this.client = client;
