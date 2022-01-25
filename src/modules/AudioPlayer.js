@@ -168,12 +168,19 @@ class AudioPlayer {
     return this.queue.getArray();
   }
 
+  // Add a song to the end of the queue
   async enqueue(song) {
     await this.queue.push(song); // Add the new song
     await this.processQueue();
   }
 
-  async processQueue(){
+  // Add a song to the start of the queue
+  async enqueueNext(song){
+    await this.queue.unshift(song);
+    await this.processQueue();
+  }
+
+  async processQueue() {
 
     // We are not in a position to play a song.
     if(this.queueLock || this.audioPlayer.state.status !== AudioPlayerStatus.Idle)

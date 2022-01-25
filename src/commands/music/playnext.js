@@ -44,6 +44,6 @@ module.exports = class PlayNextMusic extends Command {
     }
 
     // We are in a voice channel
-    await this.client.musicplayer.Play(message, args.join(' '));
+    await this.client.musicplayer.PlayNext(message, args.join(' '));
   }
 };

@@ -28,6 +28,78 @@ class MusicController {
     return this.players[guildid];
   }
 
+  async getAudioSources(message, search) {
+
+    // The output will be a list of songs.
+    let results = [];
+
+    // Check if a url was provided
+    if(isUrl(search)){
+
+      // This is a playlist
+      if(search.includes('list=P')){
+
+        const info = await YouTube.getPlaylist(search)
+        .then(playlist => playlist.fetch())
+        .catch((error) => {
+          logger.error(error);
+          throw new Error('Song processing error.');
+        });
+
+        // Add the playlist to the queue
+        for(const video of info.videos){
+          // Make sure there is actually something here
+          if(video)
+            results.push(new Song(`https://www.youtube.com/watch?v=${video.id}`, video.title, video.duration, message.member));
+
+          // Just log the issue
+          else
+            logger.warn('Had trouble processing a song.');
+        }
+      }
+
+      // Just a url
+      else {
+
+        // Retreive information about the requested song.
+        const info = await YouTube.getVideo(search)
+        .catch(error => {
+          logger.error(error);
+          throw new Error('Song processing error.');
+        });
+
+        // Make sure a video result is returned.
+        if(info) {
+          results.push(new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title, info.duration, message.member));
+        } else {
+          // There was an issue processing this song.
+          logger.warn('Had trouble processing a song');
+        }
+      }
+    }
+
+    // This is a search string
+    else {
+
+      // Retreive the song search
+      const info = await YouTube.searchOne(search)
+      .catch(error => {
+        logger.error(error);
+        throw new Error('Song processing error.');
+      });
+
+      // Make sure a video result is returned.
+      if(info){
+        results.push(new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title, info.duration, message.member));
+      }else{
+        logger.warn('Had trouble processing a song');
+      }
+    }
+
+    // Return the list of songs.
+    return results;
+  }
+
   async ConnectToChannel(message, channel){
 
     // Remove the audio device if it already exists.
@@ -61,84 +133,71 @@ class MusicController {
       return await message.channel.send('And error occured connecting the bot.');
     }
 
-    // Check if a url was provided
-    if(isUrl(search)){
+    try{
+      const songResults = await this.getAudioSources(message, search);
 
-      // This is a playlist
-      if(search.includes('list=P')){
-
-        // Get the music playlist
-        const info = await YouTube.getPlaylist(search)
-        .then(playlist => playlist.fetch())
-        .catch((error) => {
-          logger.error(error);
-          return message.channel.send(`An error occured processing that song.  Please try again.`);
-        });
-
-        // Alert the guild of the playlist being added
-        await message.channel.send(`Adding ${info.videoCount} songs to the queue.`);
-
-        // Add the playlist to the queue
-        for(const video of info.videos){
-          if(video){
-            const song = new Song(`https://www.youtube.com/watch?v=${video.id}`, video.title, video.duration, message.member);
-            await audioPlayer.enqueue(song);
-          }else{
-            logger.warn('Had trouble processing a song.');
-          }
-        }
-      }
-
-      // Just a url
-      else {
-
-        // Retreive information about the requested song.
-        const info = await YouTube.getVideo(search)
-        .catch(error => {
-          logger.error(error);
-          return message.channel.send(`An error occured processing that song.  Please try again.`);
-        });
-
-        logger.log(`info: ${info}`);
-
-        // Make sure a video result is returned.
-        if(info){
-          await message.channel.send(`Adding ***${info.title}*** to the queue.`);
-          const song = new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title, info.duration, message.member);
-          await audioPlayer.enqueue(song);
-        }else{
-          logger.warn('Had trouble processing a song');
-          return message.channel.send(`Oh... That song did not load.  Please try again.`);
-        }
-      }
-    }
-    // This is a search string
-    else {
-
-      // Retreive the song search
-      const info = await YouTube.searchOne(search)
-      .catch(error => {
-        logger.error(error);
-        return message.channel.send(`An error occured processing that song.  Please try again.`);
-      });
-
-      // Make sure a video result is returned.
-      if(info){
-        await message.channel.send(`Adding ***${info.title}*** to the queue.`);
-        const song = new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title, info.duration, message.member);
-        await audioPlayer.enqueue(song);
-      }else{
-        logger.warn('Had trouble processing a song');
+      // Make sure we have songs
+      if(songResults.length == 0)
         return message.channel.send(`Oh... That song did not load.  Please try again.`);
+
+      // Only 1 song was added
+      if(songResults.length == 1){
+        await message.channel.send(`Adding ***${songResults[0].title}*** to the queue.`);
+        await audioPlayer.enqueue(songResults[0]);
       }
+
+      // A playlist was added
+      else{
+        await message.channel.send(`Adding ${songResults.length} songs to the queue.`);
+        for(const song of songResults){
+          await audioPlayer.enqueue(song);
+        }
+      }
+
+    }catch(error){
+      console.log(error);
+      return message.channel.send(`An error occured processing that song.  Please try again.`);
     }
   }
 
   async PlayNext(message, search) {
 
+    // Get the audio player for this guild
+    let audioPlayer = this.getAudioPlayer(message.guild.id);
+
+    if(!audioPlayer){
+      logger.error('No audio player created for bot connection!');
+      return await message.channel.send('And error occured connecting the bot.');
+    }
+
+    try{
+      const songResults = await this.getAudioSources(message, search);
+
+      // Make sure we have songs
+      if(songResults.length == 0)
+        return message.channel.send(`Oh... That song did not load.  Please try again.`);
+
+      // Only 1 song was added
+      if(songResults.length == 1){
+        await message.channel.send(`Adding ***${songResults[0].title}*** to the start of the queue.`);
+        await audioPlayer.enqueueNext(songResults[0]);
+      }
+
+      // A playlist was added
+      else{
+        await message.channel.send(`Adding ${songResults.length} songs to the start of the queue.`);
+        for(const song of songResults){
+          await audioPlayer.enqueueNext(song);
+        }
+      }
+
+    }catch(error){
+      console.log(error);
+      return message.channel.send(`An error occured processing that song.  Please try again.`);
+    }
   }
 
-  async AnotherStop(guildid){
+  async AnotherStop(guildid) {
     const audioPlayer = this.getAudioPlayer(guildid);
 
     if(!audioPlayer)
