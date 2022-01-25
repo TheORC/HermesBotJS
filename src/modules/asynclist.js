@@ -14,7 +14,7 @@ class WaitQueue {
     this.listeners = [];
   }
 
-  getArray(){
+  getArray() {
     return this.queue;
   }
 
@@ -22,7 +22,7 @@ class WaitQueue {
     return this.queue.length;
   }
 
-  empty(){
+  empty() {
     this.queue = [];
   }
 
@@ -30,30 +30,30 @@ class WaitQueue {
     this.queue = [];
   }
 
-  clearListeners(){
+  clearListeners () {
     for(const litener of this.listeners){
       listener(new Error('Clear Listeners'));
     }
     this.listeners = [];
   }
 
-  shuffle(){
+  shuffle() {
     this.queue = shuffleArray(this.queue)
   }
 
-  unshift(item){
+  unshift(item) {
     this.queue.unshift(item);
     this._flush();
     return this.queue.length;
   }
 
-  push(item){
+  push(item) {
     this.queue.push(item);
     this._flush();
     return this.queue.length;
   }
 
-  async shift(){
+  async shift() {
     return new Promise((resolve, reject) => {
       if(this.queue.length > 0){
         return resolve(this.queue.shift());
@@ -67,7 +67,7 @@ class WaitQueue {
     });
   }
 
-  async pop(){
+  async pop() {
     return new Promise((resolve, reject) => {
       if(this.queue.length > 0){
         return resolve(this.queue.pop());

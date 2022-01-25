@@ -141,6 +141,19 @@ class AudioPlayer {
     return this.currentSong;
   }
 
+  getQueue(){
+    return this.queue.getArray();
+  }
+
+  clearQueue(){
+    this.queue.clear();
+    try{
+      this.queue.clearListeners();
+    }catch(error){
+      console.log(error);
+    }
+  }
+
   setVolume(volume){
     this.volume = volume;
     this.currentResorce.volume.setVolume(volume);
@@ -162,10 +175,6 @@ class AudioPlayer {
 
   async shuffle(){
     this.queue.shuffle();
-  }
-
-  getQueue(){
-    return this.queue.getArray();
   }
 
   // Add a song to the end of the queue
