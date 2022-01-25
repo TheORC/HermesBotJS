@@ -4,14 +4,16 @@ const { AudioResource, createAudioResource, demuxProbe } = require(`@discordjs/v
 
 class Song {
 
-  constructor(url, title){
+  constructor(url, title, duration, requester){
 
     // Info about this song
     this.url = url;
     this.title = title;
+    this.requester = requester;
+    this.duration = duration;
   }
 
-  async createAudioResource(){
+  async createAudioResource() {
     return new Promise((resolve, reject) => {
 
       // Get info from YouTube
@@ -37,7 +39,7 @@ class Song {
 
       process.once('spawn', () => {
         demuxProbe(stream).then((probe) => {
-          resolve(createAudioResource(probe.stream, { metadata: this, inputType: probe.type}))
+          resolve(createAudioResource(probe.stream, { metadata: this, inputType: probe.type}));
         }).catch(onError);
       }).catch(onError);
     });

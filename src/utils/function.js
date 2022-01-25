@@ -3,13 +3,24 @@ const logger = require('../modules/Logger.js');
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
 
+function msToString(millis) {
+
+  const minutes = Math.floor(millis / 60000);
+  const seconds = ((millis % 60000) / 1000).toFixed(0);
+
+  return (
+    seconds == 60 ?
+    (minutes + 1) + ":00" :
+    minutes + ":" + (seconds < 10 ? "0" : "") + seconds
+  );
+}
+
 function shuffleArray(arr){
   arr.sort(() => Math.random() - 0.5);
   return arr;
 }
 
 function isUrl(str){
-
   const pattern = new RegExp('^(https?:\\/\\/)?' +
     '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,})'
   );
@@ -51,4 +62,10 @@ const asyncCallWithTimeout = async (asyncPromise, timeLimit) => {
   ]);
 }
 
-module.exports = { asyncSubFileSearch, isUrl, shuffleArray, asyncCallWithTimeout }
+module.exports = {
+  asyncSubFileSearch,
+  isUrl,
+  shuffleArray,
+  asyncCallWithTimeout,
+  msToString
+}

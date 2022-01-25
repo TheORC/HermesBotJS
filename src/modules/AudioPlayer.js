@@ -31,6 +31,9 @@ class AudioPlayer {
     this.queueLock = false;
     this.readyLock = false;
 
+    this.currentSong = {};
+    this.currentResorce = {};
+
     // Setup event listeners
     this.voiceConnection.on('stateChange',
 			async (any, newState) => {
@@ -169,10 +172,16 @@ class AudioPlayer {
     // Another song is in the queue.  Lets play it.
     try {
 
+
       // Create the song and add it to the channel
       const songResource = await nextSong.createAudioResource();
+
+      this.currentSong = nextSong;
+      this.currentResorce = songResource;
+
       this.audioPlayer.play(songResource);
       this.queueLock = false;
+
     }catch(error){
 
       // Something has gone wrong.
@@ -184,6 +193,10 @@ class AudioPlayer {
 
   getStatus(){
     return this.audioPlayer.state?.status;
+  }
+
+  getCurrentSong(){
+    return this.currentSong;
   }
 
   async pause(){

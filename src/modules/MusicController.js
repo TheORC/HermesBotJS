@@ -81,7 +81,7 @@ class MusicController {
         // Add the playlist to the queue
         for(const video of info.videos){
           if(video){
-            const song = new Song(`https://www.youtube.com/watch?v=${video.id}`, video.title);
+            const song = new Song(`https://www.youtube.com/watch?v=${video.id}`, video.title, video.duration, message.member);
             await audioPlayer.enqueue(song);
           }else{
             logger.warn('Had trouble processing a song.');
@@ -99,12 +99,13 @@ class MusicController {
           return message.channel.send(`An error occured processing that song.  Please try again.`);
         });
 
+        console.log(info);
         logger.log(`info: ${info}`);
 
         // Make sure a video result is returned.
         if(info){
           await message.channel.send(`Adding ***${info.title}*** to the queue.`);
-          const song = new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title);
+          const song = new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title, info.duration, message.member);
           await audioPlayer.enqueue(song);
         }else{
           logger.warn('Had trouble processing a song');
@@ -125,13 +126,17 @@ class MusicController {
       // Make sure a video result is returned.
       if(info){
         await message.channel.send(`Adding ***${info.title}*** to the queue.`);
-        const song = new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title);
+        const song = new Song(`https://www.youtube.com/watch?v=${info.id}`, info.title, info.duration, message.member);
         await audioPlayer.enqueue(song);
       }else{
         logger.warn('Had trouble processing a song');
         return message.channel.send(`Oh... That song did not load.  Please try again.`);
       }
     }
+  }
+
+  async PlayNext(message, search) {
+
   }
 
   async AnotherStop(guildid){
