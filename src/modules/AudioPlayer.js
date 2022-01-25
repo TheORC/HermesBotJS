@@ -32,6 +32,8 @@ class AudioPlayer {
     this.readyLock = false;
 
     this.volume = 0.5;
+    this.loopSong = false;
+    this.loopPlaylist = false;
     this.currentSong = {};
     this.currentResorce = {};
 
@@ -147,16 +149,35 @@ class AudioPlayer {
 
   clearQueue(){
     this.queue.clear();
-    try{
+
+    try {
       this.queue.clearListeners();
-    }catch(error){
+    } catch(error) {
       console.log(error);
     }
+
+    this.loopSong = false;
+    this.loopPlaylist = false;
   }
 
   setVolume(volume){
     this.volume = volume;
     this.currentResorce.volume.setVolume(volume);
+  }
+
+  setLoopSong() {
+    this.loopSong = true; // Toggle
+    this.loopPlaylist = false;
+  }
+
+  setLoopPlaylist(){
+    this.loopPlaylist = true;
+    this.loopSong = false;
+  }
+
+  disableLoop(){
+    this.loopSong = false;
+    this.loopPlaylist = false;
   }
 
   async pause(){
@@ -195,15 +216,31 @@ class AudioPlayer {
     if(this.queueLock || this.audioPlayer.state.status !== AudioPlayerStatus.Idle)
       return;
 
+    // Make sure we loop this... Duh
+    this.queueLock = true;
+
     let nextSong;
     try {
-      nextSong = await asyncCallWithTimeout(
-        new Promise(
-          (resolve, reject) => {
-            const result = this.queue.pop();
-            resolve(result);
-          }
-      ), 60_000); // Wait for a minute
+
+      // Check if we should loop this song.
+      if(this.loopSong && this.currentSong) {
+        console.log('Looping song.');
+        nextSong = this.currentSong;
+      } else {
+
+        // Get the next song
+        nextSong = await asyncCallWithTimeout(
+          new Promise(
+            (resolve, reject) => {
+              const result = this.queue.pop();
+              resolve(result);
+            }
+        ), 60_000); // Wait for a minute
+
+        // Make sure to add the song back to the queue.
+        if(this.loopPlaylist && this.currentSong)
+          await this.queue.push(this.currentSong);
+      }
     }catch(err){
 
       // Check if this was from a timeout.
