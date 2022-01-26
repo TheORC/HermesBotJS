@@ -32,7 +32,7 @@ module.exports = class ShuffleMusic extends Command {
       return await message.channel.send('There are no songs in the queue.');
 
     // We are in a voice channel, pause the song
-    await audioPlayer.shuffle();
+    await audioPlayer.shuffleQueue();
     await message.channel.send('The queue has been shuffled.');
   }
 }

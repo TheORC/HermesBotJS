@@ -14,7 +14,6 @@ const {
   AudioPlayerStatus
 } = require('@discordjs/voice');
 
-
 class AudioPlayer {
 
   constructor(client, voiceConnection){
@@ -27,7 +26,7 @@ class AudioPlayer {
     this.audioPlayer = createAudioPlayer();
 
     // Create a song queue
-    this.queue = new WaitQueue(); // :O
+    this.queue = [];
     this.queueLock = false;
     this.readyLock = false;
 
@@ -39,6 +38,7 @@ class AudioPlayer {
     this.loopPlaylist = false;
     this.currentSong = {};
     this.currentResorce = {};
+    this.idleTimer = null;
 
     // Setup event listeners
     this.voiceConnection.on('stateChange',
@@ -123,103 +123,154 @@ class AudioPlayer {
     this.voiceConnection.subscribe(this.audioPlayer);
   }
 
-  stop(){
-    this.queueLock = true;
-    this.queue = new WaitQueue(); // Create a new queue
-    this.audioPlayer.stop(true);
-  }
-
-  onSongStart(){
+  /**
+  * This method is called when a song starts playing.
+  */
+  onSongStart() {
     logger.log('Song started playing.');
   }
 
-  onSongFinish(){
+  /**
+  * This method is called when a song finishes playing.
+  */
+  onSongFinish() {
     logger.log('Song has finished.');
     this.processQueue();
   }
 
-  getStatus(){
+  /**
+  * Get the current state of the AudioPlayer
+  * @return {AudioPlayerStatus}
+  */
+  getStatus() {
     return this.audioPlayer.state?.status;
   }
 
-  getCurrentSong(){
+  /**
+  * Gets the current song which is being played.
+  * @return {Song}
+  */
+  getCurrentSong() {
     return this.currentSong;
   }
 
-  getQueue(){
-    return this.queue.getArray();
+  /**
+  * Gets all the songs in the queue.
+  * @return {Array} - List of songs
+  */
+  getQueue() {
+    return this.queue;
   }
 
-  clearQueue(){
-    this.queue.clear();
-
-    try {
-      this.queue.clearListeners();
-    } catch(error) {
-      console.log(error);
-    }
-
+  /**
+  * Clears the qudio queue.
+  */
+  clearQueue() {
+    for(let i = 0; i < this.queue.length; i++)
+      delete this.queue[i];
+    this.queue = [];
     this.loopSong = false;
     this.loopPlaylist = false;
   }
 
-  setVolume(volume){
+  /**
+  * Randomly shuffles the queue.
+  */
+  shuffleQueue(){
+    this.queue = shuffleArray(this.queue);
+  }
+
+  /**
+  * Stops the audio player.
+  * The elements in the audio queue are deleted.
+  */
+  stop() {
+    this.queueLock = true;
+    this.clearQueue();
+    this.audioPlayer.stop(true);
+  }
+
+  /**
+  * Sets the volume of the audio player.
+  * @param {number} - number between 1 and 100
+  */
+  setVolume(volume) {
     this.volume = volume;
     this.currentResorce.volume.setVolume(volume);
   }
 
+  /**
+  * Set the audio player to loop the current song.
+  */
   setLoopSong() {
     this.loopSong = true; // Toggle
     this.loopSongSkip = false;
     this.loopPlaylist = false;
   }
 
-  setLoopPlaylist(){
+  /**
+  * Set the audio player to loop the current queue.
+  */
+  setLoopPlaylist() {
     this.loopPlaylist = true;
     this.loopSong = false;
     this.loopSongSkip = false;
   }
 
-  disableLoop(){
+  /**
+  * Stops the audio player from looping either a song or the queue.
+  */
+  disableLoop() {
     this.loopSong = false;
     this.loopSongSkip = false;
     this.loopPlaylist = false;
   }
 
-  async pause(){
+  /**
+  * Pauses the audio player.
+  */
+  async pause() {
     await this.audioPlayer.pause();
   }
 
-  async resume(){
+  /**
+  * Resumes the audio player.
+  */
+  async resume() {
     await this.audioPlayer.unpause();
   }
 
-  // When we stop the audioplayer, the onStateChange event
-  // will handle the switch to the next song.
+  /**
+  * Skips the song currently playing.
+  */
   async skip() {
-
     if(this.loopSong)
       this.loopSongSkip = true; // We need to go to the next song.
-
     await this.audioPlayer.stop();
   }
 
-  async shuffle(){
-    this.queue.shuffle();
-  }
-
-  // Add a song to the end of the queue
+  /**
+  * Adds a song to the end of the queue.
+  * @param {Song}
+  */
   async enqueue(song) {
     await this.queue.push(song); // Add the new song
     await this.processQueue();
   }
 
-  // Add a song to the start of the queue
+  /**
+  * Adds a song to the start of the queue.
+  * @param {Song}
+  */
   async enqueueNext(song){
     await this.queue.unshift(song);
     await this.processQueue();
   }
 
+  /**
+  * Processes the audio queue and plays the next song.
+  * The method also handles the looping of songs or playlists.
+  */
   async processQueue() {
 
     // We are not in a position to play a song.
@@ -230,44 +281,27 @@ class AudioPlayer {
     this.queueLock = true;
 
     let nextSong;
-    try {
 
-      // Check if we should loop this song.
-      if (this.loopSong && this.currentSong && !this.loopSongSkip) {
-        console.log('Looping song.');
-        nextSong = this.currentSong;
-      } else {
+    // Check if we should loop this song.
+    if (this.loopSong && this.currentSong && !this.loopSongSkip) {
+      nextSong = this.currentSong;
+    } else {
 
-        this.loopSongSkip = false;
+      // Check to see if we have another song to play
+      if(this.queue.length === 0)
+        // The queue is empty.  Start the idle timer
+        return await this.StartIdleTimer();
 
-        // Get the next song
-        nextSong = await asyncCallWithTimeout (
-          new Promise(
-            (resolve, reject) => {
-              const result = this.queue.pop();
-              resolve(result);
-            }
-        ), 60_000); // Wait for a minute
 
-        // Make sure to add the song back to the queue.
-        if (this.loopPlaylist && this.currentSong)
-          await this.queue.push(this.currentSong);
-      }
-    } catch(err) {
+      await this.clearIdleTimer();
+      this.loopSongSkip = false;
 
-      // Check if this was from a timeout.
-      if(err === 'timeout') {
-        // Get the guild id
-        const guildID = this.voiceConnection.joinConfig.guildId;
+      // Get the next song
+      nextSong = this.queue.shift();
 
-        // Have the player disconnect.
-        await this.client.musicplayer.AnotherStop(guildID);
-      } else {
-        // Something else has happened.  That is not good.
-        console.log(err);
-      }
-
-      return;
+      // Make sure to add the song back to the queue.
+      if (this.loopPlaylist && this.currentSong)
+        this.queue.push(this.currentSong);
     }
 
     // Another song is in the queue.  Lets play it.
@@ -290,6 +324,34 @@ class AudioPlayer {
       this.queueLock = false;
       await this.processQueue();
     }
+  }
+
+  /**
+  * Starts a timer which disconnects the audio player.
+  * This is used to ensure the bot does not sit idle for
+  * to long.
+  */
+  async StartIdleTimer() {
+
+    // Stop existing idle timers
+    await this.clearIdleTimer();
+    logger.log('Starting idle timer.');
+
+    // Start and store this timer.
+    this.idleTimer = setTimeout(async () => {
+      logger.log('Idle timer finished.');
+      const guildID = this.voiceConnection.joinConfig.guildId;
+      await this.client.musicplayer.AnotherStop(guildID);
+    }, 60_000);
+  }
+
+  /**
+  * Clears the idle timer.  Called when a new song is addded
+  * to the queue.
+  */
+  async clearIdleTimer() {
+    if(this.idleTimer !== null)
+      clearTimeout(this.idleTimer);
   }
 }
 
