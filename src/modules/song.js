@@ -27,8 +27,11 @@ class Song {
         reject(new Error('No stdout'));
       }
 
+
+
       // Get our stream
       const stream = process.stdout;
+
 
       // Create a method in case of an error.
       const onError = (error) => {

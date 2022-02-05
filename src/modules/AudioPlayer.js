@@ -34,11 +34,17 @@ class AudioPlayer {
 
     this.loopSong = false;
     this.loopSongSkip = false;
+    this.isSkip = false;
 
     this.loopPlaylist = false;
-    this.currentSong = {};
-    this.currentResorce = {};
+    this.currentSong = null;
+    this.currentResorce = null;
     this.idleTimer = null;
+
+    // Attempt to play the song three times
+    this.songAttempts = 3;
+    this.currentAttempt = 0;
+    this.attemptTimer = null;
 
     // Setup event listeners
     this.voiceConnection.on('stateChange',
@@ -104,6 +110,7 @@ class AudioPlayer {
   			if (newState.status === AudioPlayerStatus.Idle && oldState.status !== AudioPlayerStatus.Idle) {
   				// If the Idle state is entered from a non-Idle state, it means that an audio resource has finished playing.
   				// The queue is then processed to start playing the next track, if one is available.
+
           this.onSongFinish();
 
   			} else if (newState.status === AudioPlayerStatus.Playing) {
@@ -136,6 +143,13 @@ class AudioPlayer {
   onSongFinish() {
     logger.log('Song has finished.');
     this.processQueue();
+  }
+
+  /**
+  * This method is called when a song stops befor it should
+  */
+  onSongFailed(){
+    logger.warn('Song finished early.');
   }
 
   /**
@@ -247,6 +261,9 @@ class AudioPlayer {
     if(this.loopSong)
       this.loopSongSkip = true; // We need to go to the next song.
     await this.audioPlayer.stop();
+
+    // There is a skip
+    this.isSkip = true;
   }
 
   /**
@@ -277,31 +294,66 @@ class AudioPlayer {
     if(this.queueLock || this.audioPlayer.state.status !== AudioPlayerStatus.Idle)
       return;
 
+    logger.debug('Queue start');
+
     // Make sure we loop this... Duh
     this.queueLock = true;
 
+    let isAttempt = false;
     let nextSong;
 
-    // Check if we should loop this song.
-    if (this.loopSong && this.currentSong && !this.loopSongSkip) {
-      nextSong = this.currentSong;
-    } else {
+    // Check to see if the attempt timer is active.
+    // It will in the event of a failed song play.
+    // Note: Check for a manual skip.
+    if(this.currentResorce && !this.isSkip && (this.currentResorce.playbackDuration < this.currentSong.duration / 2)) {
 
-      // Check to see if we have another song to play
-      if(this.queue.length === 0)
-        // The queue is empty.  Start the idle timer
-        return await this.StartIdleTimer();
+      logger.debug('The song finished too early :o');
 
+      // See if there are remaining attempts to play the song.
+      if(this.currentAttempt < this.songAttempts){
+        this.currentAttempt += 1;
+        nextSong = this.currentSong;
+        isAttempt = true;
+        logger.warn(`Attempting to play song ${this.currentAttempt}`);
+      }
+      // No more attempts.  Move tot he next song.
+      else{
+        logger.error('Song ran out of attempts to play.');
+      }
+    }
 
-      await this.clearIdleTimer();
-      this.loopSongSkip = false;
+    // Reset the skip.
+    this.isSkip = false;
 
-      // Get the next song
-      nextSong = this.queue.shift();
+    if(!isAttempt) {
+      // This is a new song with new attempts.
+      this.currentAttempt = 0;
 
-      // Make sure to add the song back to the queue.
-      if (this.loopPlaylist && this.currentSong)
-        this.queue.push(this.currentSong);
+      // Check if we should loop this song.
+      if (this.loopSong && this.currentSong && !this.loopSongSkip) {
+        nextSong = this.currentSong;
+      } else {
+
+        // Check to see if we have another song to play
+        if(this.queue.length === 0){
+          // The queue is empty.  Start the idle timer
+          this.queueLock = false;
+          this.currentSong = null;
+          this.currentResorce = null;
+          return await this.StartIdleTimer()
+        }
+
+        await this.clearIdleTimer();
+        this.loopSongSkip = false;
+
+        // Get the next song
+        nextSong = this.queue.shift();
+        logger.debug('Shift occured!');
+
+        // Make sure to add the song back to the queue.
+        if (this.loopPlaylist && this.currentSong)
+          this.queue.push(this.currentSong);
+      }
     }
 
     // Another song is in the queue.  Lets play it.
@@ -335,14 +387,14 @@ class AudioPlayer {
 
     // Stop existing idle timers
     await this.clearIdleTimer();
-    logger.log('Starting idle timer.');
+    logger.debug('Starting idle timer.');
 
     // Start and store this timer.
     this.idleTimer = setTimeout(async () => {
-      logger.log('Idle timer finished.');
+      logger.debug('Idle timer finished.');
       const guildID = this.voiceConnection.joinConfig.guildId;
       await this.client.musicplayer.AnotherStop(guildID);
-    }, 60_000);
+    }, 60_000 * 3);
   }
 
   /**
@@ -351,7 +403,7 @@ class AudioPlayer {
   */
   async clearIdleTimer() {
     if(this.idleTimer !== null)
-      clearTimeout(this.idleTimer);
+      await clearTimeout(this.idleTimer);
   }
 }
 

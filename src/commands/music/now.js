@@ -41,12 +41,8 @@ module.exports = class NowMusic extends Command {
     if(!currentSong)
       return await message.channel.send('There is no current song in the audio player.');
 
-
     const songDuration = currentSong.duration;
     const playedDuration = audioPlayer.currentResorce.playbackDuration;
-
-    console.log(playedDuration);
-    console.log(playedDuration / songDuration);
 
     const nowEmbed = new MessageEmbed()
     .setColor('#1F8B4C')
