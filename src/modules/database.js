@@ -17,7 +17,6 @@ class DatabaseAdaptar {
 
     this.connectionSettings = this.initializeConnection(settings);
     this.connection = new mysql.createConnection(this.connectionSettings);
-
   }
 
   /**
@@ -57,10 +56,22 @@ class DatabaseAdaptar {
   */
   resetQuery() {
     this.selectClause  = [];
+    this.whereClause = {};
   }
 
   escapeFieldName(str) {
     return '`' + str.replace('.','`.`') + '`';
+  }
+
+  mergeObjects(a, b){
+
+    if(typeof(a) === 'undefined' || typeof(b) === 'undefined')
+      throw new Error('Unable to merge an undefined object');
+
+    for(let key in b)
+      if(b.hasOwnProperty(key))
+        a[key] = b[key];
+    return a;
   }
 
   // Takes a dataset and creates a SQL query.
@@ -124,8 +135,6 @@ class DatabaseAdaptar {
 
   select(fieldNames) {
 
-    console.log(fieldNames);
-
     if(!fieldNames)
       throw new Error('Select required a field name(s) to be specified.');
 
@@ -149,7 +158,35 @@ class DatabaseAdaptar {
     return this;
   }
 
-  insert(tableName, dataSet, responseCallback, verb, querySuffix){
+  /**
+  * {
+  *   value: target
+  * }
+  */
+  where(whereSet, whereValue) {
+
+    console.log(whereSet);
+    console.log(whereValue);
+
+    if(typeof(whereSet) === 'object' && typeof(whereValue) === 'undefined'){
+      this.whereClause = this.mergeObjects(this.whereClause, whereSet);
+    }
+
+    else if((typeof(whereSet) === 'string' || typeof(whereSet) === 'number') && typeof(whereValue) !== 'undefined'){
+      this.whereClause[whereSet] = whereValue;
+    }
+
+    else if((typeof(whereSet) === 'string' || typeof(whereSet) === 'number') && typeof(whereValue) === 'object' && Object.prototype.toString.call(whereValue) === '[object Array]'){
+      this.whereClause[whereSet] = whereValue;
+    }
+
+    else {
+      throw Error('Unknown Where statment.');
+    }
+    return this;
+  }
+
+  async insert(tableName, dataSet, responseCallback, verb, querySuffix) {
     if(typeof verb === 'undefined')
       verb = 'INSERT';
 
@@ -169,31 +206,46 @@ class DatabaseAdaptar {
 
       if(querySuffix != '')
         combinedQuery = combinedQuery + ' ' + querySuffix;
-        this.connection.query(combinedQuery, responseCallback);
-        this.resetQuery();
+
+      let results = await new Promise((resolve, reject) => {
+        this.connection.query(combinedQuery, (err, info) => {
+          if(err)
+            reject(err);
+          resolve(info);
+        });
+      });
+
+      this.resetQuery();
+      return results;
 
     } else {
       throw new Error('Batch inserts are not implemented yet.');
     }
-    return this;
   }
 
-  get(tableName, responseCallback) {
+  async get(tableName, responseCallback) {
     if(typeof(tableName) === 'string'){
 
       let combinedQuery = 'SELECT ' + (this.selectClause.length === 0 ? '*' : this.selectClause.join(','))
-                        + ' FROM ' + this.escapeFieldName(tableName);
-
+                        + ' FROM ' + this.escapeFieldName(tableName)
+                        + this.buildDataString(this.whereClause, ' AND ', 'WHERE');
 
       console.log(combinedQuery);
-      this.connection.query(combinedQuery, responseCallback);
+
+      let results = await new Promise((resolve, reject) => {
+        this.connection.query(combinedQuery, (err, info) => {
+          if(err)
+            reject(err);
+          resolve(info);
+        });
+      });
+
       this.resetQuery();
+      return results;
 
     } else {
       throw new Error('Get a tableName as type string.');
     }
-
-    return this;
   }
 
   disconnect () {

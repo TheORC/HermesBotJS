@@ -3,7 +3,22 @@ const logger = require('../modules/Logger.js');
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
 
-function isNumeric(num){
+function currentDateToString(){
+  const date = new Date();
+  return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+}
+
+function getDatabaseCotainsUser(dbUsers, username){
+  for(let i = 0; i < dbUsers.length; i++)
+  {
+    const setItem = dbUsers[i];
+    if(setItem.username.toLowerCase() === username.toLowerCase())
+      return setItem;
+  }
+  return null;
+}
+
+function isNumeric(num) {
   return !isNaN(num);
 }
 
@@ -72,5 +87,7 @@ module.exports = {
   shuffleArray,
   asyncCallWithTimeout,
   msToString,
-  isNumeric
+  isNumeric,
+  getDatabaseCotainsUser,
+  currentDateToString
 }
