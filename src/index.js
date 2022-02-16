@@ -1,7 +1,7 @@
-
+"use strict";
 
 // Import required packages
-const { log, warn, error } = require('./modules/Logger.js')
+const { log, warn, error } = require('./modules/Logger.js');
 const fs = require('fs');
 const { asyncSubFileSearch } = require('./utils/function.js');
 
@@ -16,13 +16,10 @@ require("dotenv").config();
 const { Client, Collection } = require('discord.js');
 
 // Import bot settings
-const { intents, partials, permLevels } = require('./config.js');
+const { intents, partials } = require('./config.js');
 
 // Import Music Client
 const MusicController = require('./modules/MusicController.js');
-
-// List of permissions
-const levelCache = {};
 
 class HermesBot extends Client {
   constructor(options) {
@@ -37,12 +34,6 @@ class HermesBot extends Client {
     this.musicplayer = new MusicController(this, {});
   }
 }
-
-for (let i = 0; i < permLevels.length; i++) {
-  const level = permLevels[i];
-  levelCache[level.name] = level.level;
-}
-
 
 const client = new HermesBot({intents, partials});
 
@@ -64,7 +55,8 @@ const init = async () => {
   }
 
   // Load any slash commands
-  const slashCommands = fs.readdirSync('./src/slash/').filter(f => fs.endsWith('.js'));
+  const slashCommands = fs.readdirSync('./src/slash/').filter(() => fs.endsWith('.js'));
+
   for (const file of slashCommands){
     const command = new (require(`./slash/${file}`))(client);
     const commandName = file.split(".")[0];
@@ -93,7 +85,7 @@ const init = async () => {
   // Start the client
   client.login(process.env.token);
 
-  log('Client has started.')
+  log('Client has started.');
 };
 
 init();

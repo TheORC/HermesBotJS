@@ -1,4 +1,4 @@
-const logger = require('../modules/Logger.js');
+"use strict";
 
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
@@ -12,8 +12,9 @@ function getDatabaseCotainsUser(dbUsers, username){
   for(let i = 0; i < dbUsers.length; i++)
   {
     const setItem = dbUsers[i];
-    if(setItem.username.toLowerCase() === username.toLowerCase())
+    if(setItem.username.toLowerCase() === username.toLowerCase()){
       return setItem;
+    }
   }
   return null;
 }
@@ -28,7 +29,7 @@ function msToString(millis) {
   const seconds = ((millis % 60000) / 1000).toFixed(0);
 
   return (
-    seconds == 60 ?
+    seconds === 60 ?
     (minutes + 1) + ":00" :
     minutes + ":" + (seconds < 10 ? "0" : "") + seconds
   );
@@ -79,7 +80,7 @@ const asyncCallWithTimeout = async (asyncPromise, timeLimit) => {
           }, timeLimit);
       })
   ]);
-}
+};
 
 module.exports = {
   asyncSubFileSearch,
@@ -90,4 +91,4 @@ module.exports = {
   isNumeric,
   getDatabaseCotainsUser,
   currentDateToString
-}
+};

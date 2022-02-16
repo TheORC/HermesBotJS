@@ -1,3 +1,5 @@
+"use strict";
+
 const AudioPlayer = require('./AudioPlayer');
 const Song = require('./song.js');
 const logger = require('./Logger.js');
@@ -10,14 +12,15 @@ class MusicController {
   constructor(client, settings){
     this.client = client;
     this.settings = settings;
-    this.players = {}
+    this.players = {};
   }
 
   removeAudioPlayer(guildid){
     // Make sure there is something here.
     const audioPlayer = this.getAudioPlayer(guildid);
-    if(!audioPlayer)
+    if(!audioPlayer){
       return;
+    }
 
     audioPlayer.voiceConnection.destroy();
     delete this.players[guildid];
@@ -39,6 +42,7 @@ class MusicController {
       // This is a playlist
       if(search.includes('list=P')){
 
+        // TODO: Fix an issue where a null playlist is added to the audio queue.
         const info = await YouTube.getPlaylist(search)
         .then(playlist => playlist.fetch())
         .catch((error) => {
@@ -47,14 +51,16 @@ class MusicController {
         });
 
         // Add the playlist to the queue
-        for(const video of info.videos){
+        for(const video of info.videos) {
           // Make sure there is actually something here
-          if(video)
+          if(video) {
             results.push(new Song(`https://www.youtube.com/watch?v=${video.id}`, video.title, video.duration, message.member));
+          }
 
           // Just log the issue
-          else
+          else{
             logger.warn('Had trouble processing a song.');
+          }
         }
       }
 
@@ -113,14 +119,15 @@ class MusicController {
     });
 
     try {
-      await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
+      await entersState(connection, VoiceConnectionStatus.Ready, 30000);
     }catch(error){
       logger.error(error);
       connection.destroy();
       throw error;
     }
 
-    return this.players[channel.guild.id] = new AudioPlayer(this.client, connection);
+    this.players[channel.guild.id] = new AudioPlayer(this.client, connection);
+    return this.players[channel.guild.id];
   }
 
   async Play(message, search) {
@@ -137,11 +144,12 @@ class MusicController {
       const songResults = await this.getAudioSources(message, search);
 
       // Make sure we have songs
-      if(songResults.length == 0)
+      if(songResults.length === 0){
         return message.channel.send(`Oh... That song did not load.  Please try again.`);
+      }
 
       // Only 1 song was added
-      if(songResults.length == 1){
+      if(songResults.length === 1){
         await message.channel.send(`Adding ***${songResults[0].title}*** to the queue.`);
         await audioPlayer.enqueue(songResults[0]);
       }
@@ -174,11 +182,12 @@ class MusicController {
       const songResults = await this.getAudioSources(message, search);
 
       // Make sure we have songs
-      if(songResults.length == 0)
+      if(songResults.length === 0){
         return message.channel.send(`Oh... That song did not load.  Please try again.`);
+      }
 
       // Only 1 song was added
-      if(songResults.length == 1){
+      if(songResults.length === 1){
         await message.channel.send(`Adding ***${songResults[0].title}*** to the start of the queue.`);
         await audioPlayer.enqueueNext(songResults[0]);
       }
@@ -200,8 +209,9 @@ class MusicController {
   async AnotherStop(guildid) {
     const audioPlayer = this.getAudioPlayer(guildid);
 
-    if(!audioPlayer)
+    if(!audioPlayer){
       return console.log('This should not happen...');
+    }
 
     audioPlayer.voiceConnection.destroy();
     delete this.players[guildid];
@@ -211,8 +221,9 @@ class MusicController {
 
     const audioPlayer = this.getAudioPlayer(message.guild.id);
 
-    if(!audioPlayer)
+    if(!audioPlayer){
       return message.channel.send('The bot is not playing any music.');
+    }
 
     audioPlayer.voiceConnection.destroy();
     delete this.players[message.guild.id];

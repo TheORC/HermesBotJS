@@ -1,3 +1,5 @@
+"use strict";
+
 const { shuffleArray } = require('../utils/function.js');
 
 const nextLoop = (() => {
@@ -31,14 +33,14 @@ class WaitQueue {
   }
 
   clearListeners () {
-    for(const litener of this.listeners){
+    for(const listener of this.listeners){
       listener(new Error('Clear Listeners'));
     }
     this.listeners = [];
   }
 
   shuffle() {
-    this.queue = shuffleArray(this.queue)
+    this.queue = shuffleArray(this.queue);
   }
 
   unshift(item) {
@@ -59,8 +61,9 @@ class WaitQueue {
         return resolve(this.queue.shift());
       }else{
         this.listeners.push((err) => {
-          if(err)
+          if(err){
             return reject(err);
+          }
           return resolve(this.queue.shift());
         });
       }
@@ -73,8 +76,9 @@ class WaitQueue {
         return resolve(this.queue.pop());
       }else{
         this.listeners.push((err) => {
-          if(err)
+          if(err){
             return reject(err);
+          }
           return resolve(this.queue.pop());
         });
       }

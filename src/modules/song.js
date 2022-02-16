@@ -1,6 +1,8 @@
+"use strict";
+
 const ytdlex = require('youtube-dl-exec');
 
-const { AudioResource, createAudioResource, demuxProbe } = require(`@discordjs/voice`);
+const { createAudioResource, demuxProbe } = require(`@discordjs/voice`);
 
 class Song {
 
@@ -27,18 +29,17 @@ class Song {
         reject(new Error('No stdout'));
       }
 
-
-
       // Get our stream
       const stream = process.stdout;
 
-
       // Create a method in case of an error.
       const onError = (error) => {
-        if(!process.killed) process.kill();
+        if(!process.killed) {
+          process.kill();
+        }
         stream.resume();
         reject(error);
-      }
+      };
 
       process.once('spawn', () => {
         demuxProbe(stream).then((probe) => {

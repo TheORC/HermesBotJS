@@ -1,4 +1,5 @@
-const logger = require('../../modules/Logger.js');
+"use strict";
+
 const Command = require('../../base/Command.js');
 
 module.exports = class LoopMusic extends Command {
@@ -15,17 +16,21 @@ module.exports = class LoopMusic extends Command {
     this.client = client;
   }
 
-  async run(message, args, level){
+  async run(message, args){
 
     // Make sure the member is in a channel.
-    const channel = message.member.voice?.channel;
-    if(!channel)
+    let channel;
+    if(message.member.voice){
+      channel = message.member.voice.channel;
+    } else {
       return message.channel.send('This command can only be used when in a voice channel.');
+    }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
-    if(!audioPlayer)
+    if(!audioPlayer){
       return await message.channel.send('The bot is not currently in a channel.');
+    }
 
     const command = args[0];
 
@@ -35,8 +40,9 @@ module.exports = class LoopMusic extends Command {
         await message.channel.send('Enabled song loop.');
         break;
       case 'playlist':
-        if(audioPlayer.getQueue().length == 0)
+        if(audioPlayer.getQueue().length === 0){
           return await message.channel.send('There needs to be at least 1 song in the queue to loop the playlist.');
+        }
 
         audioPlayer.setLoopPlaylist();
         await message.channel.send('Enable playlist loop');
@@ -49,4 +55,4 @@ module.exports = class LoopMusic extends Command {
         return await message.channel.send('Unknown loop option, please use either song, playlist, or none.');
     }
   }
-}
+};

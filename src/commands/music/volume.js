@@ -1,10 +1,7 @@
-const logger = require('../../modules/Logger.js');
+"use strict";
+
 const { isNumeric } = require('../../utils/function.js');
 const Command = require("../../base/Command.js");
-
-const { getVoiceConnection } = require('@discordjs/voice');
-
-
 
 module.exports = class VolumeMusic extends Command {
 
@@ -20,28 +17,33 @@ module.exports = class VolumeMusic extends Command {
     this.client = client;
   }
 
-  async run(message, args, level){
+  async run(message, args){
 
     // Make sure the member is in a channel.
-    const channel = message.member.voice?.channel;
-    if(!channel)
+    let channel;
+    if(message.member.voice){
+      channel = message.member.voice.channel;
+    } else {
       return message.channel.send('This command can only be used when in a voice channel.');
+    }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
-    if(!audioPlayer)
+    if(!audioPlayer){
       return await message.channel.send('The bot is not currently in a channel.');
+    }
 
     const volume = args[0];
-    if(!isNumeric(volume) || !volume)
+    if(!isNumeric(volume) || !volume){
       return await message.channel.send('Make sure you enter a number (1-100).');
+    }
 
     const volumeNumber = parseInt(volume);
-
-    if(volumeNumber <= 0 || volumeNumber > 100)
+    if(volumeNumber <= 0 || volumeNumber > 100){
       return await message.channel.send('Make sure the volume is between 1 and 100.');
+    }
 
     audioPlayer.setVolume(volumeNumber/100);
     await message.channel.send(`The volume has been changed to ${volumeNumber}%`);
   }
-}
+};

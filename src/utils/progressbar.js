@@ -1,6 +1,6 @@
+"use strict";
 
 const { msToString } = require('./function.js');
-
 
 module.exports = (duration, total, size) => {
 
@@ -17,6 +17,5 @@ module.exports = (duration, total, size) => {
   const beforeProgress = '-'.repeat(progress);
   const emptyProgress = '-'.repeat(remaining);
 
-  const bar = '```[' + beforeProgress + 'x' + emptyProgress + '] ' + currentString + '/' + totalString + '```';
-  return bar;
+  return '```[' + beforeProgress + 'x' + emptyProgress + '] ' + currentString + '/' + totalString + '```';
 };
