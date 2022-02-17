@@ -4,7 +4,7 @@ const logger   = require('../../modules/Logger.js');
 const Command  = require('../../base/Command.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
-const { getDatabaseCotainsUser } = require('../../utils/function.js');
+const { getDatabaseCotainsUser, simpleDate } = require('../../utils/function.js');
 
 module.exports = class GetQuotes extends Command {
 
@@ -32,7 +32,12 @@ module.exports = class GetQuotes extends Command {
       // Get users from the database.
       let db, dbusers;
       try {
-        db = new DatabaseAdaptar({server: 'localhost', username: 'root', password: 'Letmein21', database: 'hermes'});
+        db = new DatabaseAdaptar({
+            server: 'localhost',
+            username: process.env.db_user,
+            password: process.env.db_password,
+            database: process.env.db
+        });
         dbusers = await db.select(['iduser', 'username']).where('idguild', message.guild.id).get('users');
       } catch(err) {
         logger.error(err);
@@ -63,12 +68,15 @@ module.exports = class GetQuotes extends Command {
         return await message.channel.send('Unable to get quotes.');
       }
 
+      db.disconnect();
+
       if(quotes.length === 0){
         return await message.channel.send('There are no quotes for this user.');
       }
+
       let quoteArray = [];
       for(let i = 0; i < quotes.length; i++){
-        quoteArray.push([quotes[i].idquote.toString(), quotes[i].quote_data]);
+        quoteArray.push([simpleDate(quotes[i].quote_date), `**${quotes[i].idquote.toString()}** : ${quotes[i].quote_data}`]);
       }
 
       const settings = {
@@ -83,9 +91,49 @@ module.exports = class GetQuotes extends Command {
     }
     //Nothing.  Get all guild quotes.
     else {
-      //// TODO:
-      console.log('TODO');
-    }
 
+      // Get users from the database.
+      let db;
+      try {
+        db = new DatabaseAdaptar({server: 'localhost', username: 'root', password: 'Letmein21', database: 'hermes'});
+      } catch(err) {
+        logger.error(err);
+        db.disconnect();
+        return await message.send('There was a problem talking with the database.');
+      }
+
+      let quotes;
+      try {
+
+        quotes = await db
+          .select(['idquote', 'username', 'quote_data', 'quote_date'])
+          .where('idguild', message.guild.id)
+          .get('user_quotes');
+
+      } catch(err) {
+        logger.error(err);
+        db.disconnect();
+        return await message.channel.send('Unable to get quotes.');
+      }
+
+      if(quotes.length === 0){
+        return await message.channel.send('There are no quotes.');
+      }
+
+      let quoteArray = [];
+      for(let i = 0; i < quotes.length; i++){
+        let time = simpleDate(quotes[i].quote_date);
+        quoteArray.push([`${quotes[i].username} - ${time}`, `**${quotes[i].idquote}** : ${quotes[i].quote_data}`]);
+      }
+
+      const settings = {
+        title: `All Quotes`,
+        description: `There is a total of **${quotes.length}** quotes.`,
+        inline: false
+      };
+
+      // Add the embed
+      await this.client.embedcontroller.addPage(message, quoteArray, settings);
+    }
   }
 };

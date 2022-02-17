@@ -3,9 +3,14 @@
 const { resolve } = require('path');
 const { readdir } = require('fs').promises;
 
-function currentDateToString(){
+function currentDateToString() {
   const date = new Date();
   return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+}
+
+function simpleDate(input) {
+  const date = new Date(input);
+  return date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
 }
 
 function getDatabaseCotainsUser(dbUsers, username){
@@ -90,5 +95,6 @@ module.exports = {
   msToString,
   isNumeric,
   getDatabaseCotainsUser,
-  currentDateToString
+  currentDateToString,
+  simpleDate
 };

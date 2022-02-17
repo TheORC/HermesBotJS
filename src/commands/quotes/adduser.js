@@ -1,20 +1,20 @@
 "use strict";
 
-const logger   = require('../../modules/Logger.js');
 const Command  = require('../../base/Command.js');
+const logger   = require('../../modules/Logger.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
-const { currentDateToString, getDatabaseCotainsUser } = require('../../utils/function.js');
+const { getDatabaseCotainsUser } = require('../../utils/function.js');
 
 module.exports = class AddQuote extends Command {
 
   constructor(client) {
     super(client, {
-      name: "addquote",
-      description: "Adds a new quote.",
+      name: "adduser",
+      description: "Adds a new user.",
       category: "Quotes",
-      usage: "addquote [username] [quote]",
-      aliases: ["aq"]
+      usage: "adduser [username]",
+      aliases: ["au"]
     });
 
     this.client = client;
@@ -22,14 +22,12 @@ module.exports = class AddQuote extends Command {
 
   async run(message, args) {
 
-    // Check the command syntax
-    if(args.length <= 1){
+    if(args.length > 1 || args.length === 0){
       return await message.channel.send('Command syntax wrong.  Please refer to help.');
     }
 
     // Get command information
     const userName = args[0];
-    const quote = args.join(' ').split(userName)[1].trim();
 
     // Create a database connections
     let database, dbusers;
@@ -55,22 +53,20 @@ module.exports = class AddQuote extends Command {
     const userInfo = getDatabaseCotainsUser(dbusers, userName);
 
     // Check
-    if(!userInfo){
-      return await message.channel.send('User not found.  Please check your spelling or add them.');
+    if(userInfo){
+      return await message.channel.send('This user is already in the database.');
     }
 
     // A user has been found.  Time to add the quote.
     try {
       // Insert
-      let info = await database.insert('quotes', {
-        iduser: userInfo.iduser,
+      await database.insert('users', {
         idguild: message.guild.id,
-        quote_data: quote,
-        quote_date: currentDateToString()
+        username: userName
       });
 
       // Finished
-      await message.channel.send('Added a new quote with the id: ' + info.insertId);
+      await message.channel.send(`Added user (${userName}).`);
     } catch(err) {
       logger.error(err);
       database.disconnect();
