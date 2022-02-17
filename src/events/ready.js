@@ -9,7 +9,7 @@ module.exports = class {
     this.client = client;
   }
 
-  async run(){
+  async run() {
 
     if (!defaultSettings) { throw new Error('defaultSettings not preset in config.js or settings database. Bot cannot load.'); }
 

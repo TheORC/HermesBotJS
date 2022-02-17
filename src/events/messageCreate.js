@@ -4,11 +4,12 @@ const { defaultSettings } = require('../config.js');
 const logger = require('../modules/Logger.js');
 
 module.exports = class {
-  constructor(client){
+  
+  constructor(client) {
     this.client = client;
   }
 
-  async run(message){
+  async run(message) {
 
     // We don't process the message if its a bot
     if(message.author.bot){ return; }

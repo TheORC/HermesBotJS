@@ -20,6 +20,7 @@ const { intents, partials } = require('./config.js');
 
 // Import Music Client
 const MusicController = require('./modules/MusicController.js');
+const EmbedController = require('./modules/embedcontroller.js');
 
 class HermesBot extends Client {
   constructor(options) {
@@ -32,6 +33,7 @@ class HermesBot extends Client {
     };
 
     this.musicplayer = new MusicController(this, {});
+    this.embedcontroller = new EmbedController(this);
   }
 }
 

@@ -3,7 +3,6 @@
 const logger   = require('../../modules/Logger.js');
 const Command  = require('../../base/Command.js');
 
-const { MessageEmbed } = require('discord.js');
 const { DatabaseAdaptar } = require('../../modules/database.js');
 const { getDatabaseCotainsUser } = require('../../utils/function.js');
 
@@ -67,12 +66,19 @@ module.exports = class GetQuotes extends Command {
       if(quotes.length === 0){
         return await message.channel.send('There are no quotes for this user.');
       }
-
-      const embed = new MessageEmbed();
+      let quoteArray = [];
       for(let i = 0; i < quotes.length; i++){
-        embed.addField('Quote', quotes[i].quote_data, false);
+        quoteArray.push([quotes[i].idquote.toString(), quotes[i].quote_data]);
       }
-      await message.channel.send({ embeds: [embed] });
+
+      const settings = {
+        title: `${userInfo.username}'s Quotes`,
+        description: `There is a total of **${quotes.length}** quotes.`,
+        inline: false
+      };
+
+      // Add the embed
+      await this.client.embedcontroller.addPage(message, quoteArray, settings);
 
     }
     //Nothing.  Get all guild quotes.
