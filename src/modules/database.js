@@ -22,10 +22,12 @@ class DatabaseAdaptar {
   }
 
   /**
-  * Asstablish the connection to the database.
-  */
+   * Extracts default values for the database connections.
+   *
+   * @param {object} settings Settings to include with the defualt.
+   * @returns {object} Default settings.
+   */
   initializeConnection(settings) {
-
     if(settings.server) { settings.host = settings.server; }
     if(settings.username) { settings.user = settings.username; }
     if(!settings.port) {settings.port = 3306; }
@@ -38,22 +40,54 @@ class DatabaseAdaptar {
     return settings;
   }
 
-  getConnectionSettings () { return this.connectionSettings; }
-  connection() { return this.connection; }
+  /**
+   * Returns the settings used for the current connection.
+   *
+   * @returns {object} Current connection settings.
+   */
+  getConnectionSettings () {
+    return this.connectionSettings;
+  }
 
   /**
-  * Reset the clauses for the next database request.
-  */
+   * Returns the current database connection.
+   *
+   * @returns {Connection} The active connection.
+   */
+  connection() {
+    return this.connection;
+  }
+
+  /**
+   * Resets the query options.  Called after a query is
+   * completed.
+   */
   resetQuery() {
     this.selectClause  = [];
     this.whereClause = {};
   }
 
+  /**
+   * Safely escape a string so it can be used in an SQL query.
+   *
+   * @param {type} str String to be escaped.
+   * @returns {str} The escaped string.
+   */
   escapeFieldName(str) {
     return '`' + str.replace('.','`.`') + '`';
   }
 
-  mergeObjects(a, b){
+
+  /**
+   * Merges two objects together.  Objects from `b` are added
+   * to object `a`.
+   *
+   * @param {object} a First object.
+   * @param {object} b Second object
+   *
+   * @returns {object} Merged objects.
+   */
+  mergeObjects(a, b) {
 
     if(typeof(a) === 'undefined' || typeof(b) === 'undefined'){
       throw new Error('Unable to merge an undefined object');
@@ -67,23 +101,47 @@ class DatabaseAdaptar {
     return a;
   }
 
-  // Takes a dataset and creates a SQL query.
+  /**
+   * Returns the size of a set.
+   *
+   * @param {object} set The set to measure.
+   *
+   * @returns {int} The length of the set.
+   */
+  getSetSize(set){
+    let size = 0;
+    for(let key in set){
+      if(set.hasOwnProperty(key)){
+        size++;
+      }
+    }
+    return size;
+  }
+
+  /**
+   * Takes an object set and converts it into an SQL string.
+   *
+   * @param {object} dataSet   Dataset to be convered.
+   * @param {str} separator Seperator used between set items.
+   * @param {str} clause    The type of sql string.
+   *
+   * @returns {str} Description
+   */
   buildDataString(dataSet, separator, clause) {
-    if(!clause){
+
+    if(!clause) {
       clause = 'WHERE';
     }
 
-    let queryString = '', y = 1;
-
-    if(!separator){
+    if(!separator) {
       separator = ', ';
     }
 
+    let queryString = '', y = 1;
     let useSeperator = true;
     let datasetSize = this.getSetSize(dataSet);
 
     for(var key in dataSet){
-      // Make sure the set has the item
       if(dataSet.hasOwnProperty(key)){
 
         useSeperator = true;
@@ -110,25 +168,23 @@ class DatabaseAdaptar {
           y++;
         }
       }
-
     }
 
     if(this.getSetSize(dataSet) > 0){
       queryString = ' ' + clause + ' ' + queryString;
     }
+
     return queryString;
   }
 
-  getSetSize(set){
-    let size = 0;
-    for(let key in set){
-      if(set.hasOwnProperty(key)){
-        size++;
-      }
-    }
-    return size;
-  }
-
+  /**
+   * This method is used to determine which columns should be
+   * selected from a table.
+   *
+   * @param {object Array} fieldNames An array of column names to be selected.
+   *
+   * @returns {this}
+   */
   select(fieldNames) {
 
     if(!fieldNames){
@@ -139,8 +195,7 @@ class DatabaseAdaptar {
       for(let i = 0; i < fieldNames.length; i++){
         this.selectClause.push(fieldNames[i].trim());
       }
-    }
-    else if(typeof(fieldNames) === 'string') {
+    } else if(typeof(fieldNames) === 'string') {
       var selectFieldNames = fieldNames.split(',');
       for(let i = 0; i < selectFieldNames.length; i++){
         this.selectClause.push(selectFieldNames[i].trim());
@@ -154,10 +209,13 @@ class DatabaseAdaptar {
   }
 
   /**
-  * {
-  *   value: target
-  * }
-  */
+   * This method is used to determine where conditions for selected columns.
+   *
+   * @param {str} whereSet The value to check
+   * @param {object Array} whereValue A list of possible options.
+   *
+   * @returns {this}
+   */
   where(whereSet, whereValue) {
 
     if(typeof(whereSet) === 'object' && typeof(whereValue) === 'undefined'){
@@ -179,73 +237,91 @@ class DatabaseAdaptar {
     return this;
   }
 
-  async insert(tableName, dataSet, responseCallback, verb, querySuffix) {
+
+  /**
+   * Inserts values into the database.
+   *
+   * @param {str} tableName         Name of the table
+   * @param {object} dataSet          Set of data being inserted
+   * @param {str} verb             The verb to use if there is one
+   * @param {str} querySuffix      The suffix to use if there  is one
+   *
+   * @returns {obj} SQL query results
+   */
+  async insert(tableName, dataSet, verb, querySuffix) {
 
     if(typeof verb === 'undefined'){
       verb = 'INSERT';
     }
 
-    if(Object.prototype.toString.call(dataSet) !== ['object Array']) {
-
-      if(typeof(querySuffix) === 'undefined'){
-        querySuffix = '';
-      }
-
-      if(typeof(querySuffix) !== 'string'){
-        querySuffix = '';
-      }
-
-      if(typeof(tableName) !== 'string'){
-        throw new Error('Insert table name must be a string.');
-      }
-
-      var combinedQuery = verb + ' into ' + this.escapeFieldName(tableName) + this.buildDataString(dataSet, ', ', 'SET');
-
-      if(querySuffix !== ''){
-        combinedQuery = combinedQuery + ' ' + querySuffix;
-      }
-
-      let results = await new Promise((resolve, reject) => {
-        this.connection.query(combinedQuery, (err, info) => {
-          if(err){ reject(err); }
-          resolve(info);
-        });
-      });
-
-      this.resetQuery();
-      return results;
-
-    } else {
-      throw new Error('Batch inserts are not implemented yet.');
+    if(typeof(querySuffix) === 'undefined'){
+      querySuffix = '';
     }
+
+    if(typeof(querySuffix) !== 'string'){
+      querySuffix = '';
+    }
+
+    if(typeof(tableName) !== 'string'){
+      throw new Error('Insert table name must be a string.');
+    }
+
+    var combinedQuery = verb + ' into ' + this.escapeFieldName(tableName) + this.buildDataString(dataSet, ', ', 'SET');
+
+    if(querySuffix !== ''){
+      combinedQuery = combinedQuery + ' ' + querySuffix;
+    }
+
+    let results = await new Promise((resolve, reject) => {
+      this.connection.query(combinedQuery, (err, info) => {
+        if(err){ reject(err); }
+        resolve(info);
+      });
+    });
+
+    this.resetQuery();
+    return results;
   }
 
+  /**
+   * This method is called when information needs to be retreieved from
+   * the database.
+   *
+   * @param {str} tableName Name of table to select from
+   *
+   * @returns {object} The results of the get request
+   */
   async get(tableName) {
-    if(typeof(tableName) === 'string'){
 
-      let combinedQuery = 'SELECT ' + (this.selectClause.length === 0 ? '*' : this.selectClause.join(',')) + ' FROM ' + this.escapeFieldName(tableName) + this.buildDataString(this.whereClause, ' AND ', 'WHERE');
-
-      console.log(combinedQuery);
-
-      let results = await new Promise((resolve, reject) => {
-        this.connection.query(combinedQuery, (err, info) => {
-          if(err) { reject(err); }
-          resolve(info);
-        });
-      });
-
-      this.resetQuery();
-      return results;
-
-    } else {
+    if(typeof(tableName) !== 'string') {
       throw new Error('Get a tableName as type string.');
     }
+
+    let combinedQuery = 'SELECT ' + (this.selectClause.length === 0 ? '*' : this.selectClause.join(',')) + ' FROM ' + this.escapeFieldName(tableName) + this.buildDataString(this.whereClause, ' AND ', 'WHERE');
+
+    console.log(combinedQuery);
+
+    let results = await new Promise((resolve, reject) => {
+      this.connection.query(combinedQuery, (err, info) => {
+        if(err) { reject(err); }
+        resolve(info);
+      });
+    });
+
+    this.resetQuery();
+    return results;
   }
 
+
+  /**
+   * Disconnect from the database.  This should be called
+   * after the connection has been used.
+   *
+   * @returns {obj} The connection
+   */
   disconnect () {
     return this.connection.end();
   }
-
 }
 
 module.exports.DatabaseAdaptar = DatabaseAdaptar;
