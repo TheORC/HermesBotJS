@@ -29,7 +29,7 @@ module.exports = class RemoveUser extends Command {
     try {
 
       database = new DatabaseAdaptar({
-          server: 'localhost',
+          server:   process.env.db_host,
           username: process.env.db_user,
           password: process.env.db_password,
           database: process.env.db

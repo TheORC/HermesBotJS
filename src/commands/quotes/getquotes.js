@@ -33,7 +33,7 @@ module.exports = class GetQuotes extends Command {
       let db, dbusers;
       try {
         db = new DatabaseAdaptar({
-            server: 'localhost',
+            server:   process.env.db_host,
             username: process.env.db_user,
             password: process.env.db_password,
             database: process.env.db
