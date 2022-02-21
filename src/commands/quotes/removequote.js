@@ -4,7 +4,6 @@ const logger   = require('../../modules/Logger.js');
 const Command  = require('../../base/Command.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
-const { currentDateToString, getDatabaseCotainsUser } = require('../../utils/function.js');
 
 module.exports = class RemoveQuote extends Command {
 
@@ -23,7 +22,7 @@ module.exports = class RemoveQuote extends Command {
   async run(message, args) {
 
     // Check the command syntax
-    if (args.length > 1) {
+    if (args.length === 0 || args.length > 1) {
       return await message.channel.send('Command syntax wrong.  Please refer to help.');
     }
 
@@ -55,7 +54,7 @@ module.exports = class RemoveQuote extends Command {
       }
 
       // Remove the quote
-      await database.where('idquote', quoteId).delete('quotes');
+      await database.where('idquote', quoteId).where('idguild', message.guild.id).delete('quotes');
       await message.channel.send(`Quote with id ${quoteId} removed.`);
 
     } catch(err) {
