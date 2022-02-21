@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node src/test.js",
     "start": "node src/index.js"
   },
   "author": "",
@@ -16,12 +16,14 @@
     "dotenv": "^13.0.1",
     "ffmpeg-static": "^4.4.1",
     "libsodium-wrappers": "^0.7.9",
+    "mysql": "^2.18.1",
     "opusscript": "^0.0.8",
     "youtube-dl-exec": "^2.0.4",
     "youtube-sr": "^4.1.12"
   },
   "devDependencies": {
     "eslint": "^8.7.0",
-    "eslint-config-xo": "^0.39.0"
+    "eslint-config-xo": "^0.39.0",
+    "jshint": "^2.13.4"
   }
 }

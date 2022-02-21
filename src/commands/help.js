@@ -1,3 +1,5 @@
+"use strict";
+
 const Command = require("../base/Command.js");
 const { codeBlock } = require("@discordjs/builders");
 
@@ -19,7 +21,7 @@ module.exports = class Help extends Command {
     });
   }
 
-  async run(message, args, level) {
+  async run(message, args) {
     const { container } = this.client;
     // If no specific command is called, show all filtered commands.
     if (!args[0]) {
@@ -57,9 +59,15 @@ module.exports = class Help extends Command {
       // Show individual command's help.
       let command = args[0];
       if (container.commands.has(command) || container.commands.has(container.aliases.get(command))) {
-        command = container.commands.get(command) ?? container.commands.get(container.aliases.get(command));
+
+        if(container.commands.get(command)){
+           command =  container.commands.get(command);
+        } else {
+          command = container.commands.get(container.aliases.get(command));
+        }
+
         message.channel.send(codeBlock("asciidoc", `= ${command.help.name} = \n${command.help.description}\nusage:: ${command.help.usage}\nalises:: ${command.conf.aliases.join(", ")}`));
-      } else return message.channel.send("No command with that name, or alias exists.");
+      } else { return message.channel.send("No command with that name, or alias exists."); }
     }
   }
 };

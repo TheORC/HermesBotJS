@@ -1,3 +1,5 @@
+"use strict";
+
 const logger = require('../../modules/Logger.js');
 const Command = require("../../base/Command.js");
 
@@ -17,25 +19,30 @@ module.exports = class ResumeMusic extends Command {
     this.client = client;
   }
 
-  async run(message, args, level){
+  async run(message){
 
-    // Make sure the memeber is in a channel
-    const channel = message.member.voice?.channel;
-    if(!channel)
+    // Make sure the member is in a channel.
+    let channel;
+    if(message.member.voice){
+      channel = message.member.voice.channel;
+    } else {
       return message.channel.send('This command can only be used when in a voice channel.');
+    }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
-    if(!audioPlayer)
+    if(!audioPlayer){
       return await message.channel.send('The bot is not currently in a channel.');
+    }
 
     // Make sure the bot is playing a song.
-    if(audioPlayer.getStatus() !== AudioPlayerStatus.Paused)
+    if(audioPlayer.getStatus() !== AudioPlayerStatus.Paused){
       return await message.channel.send('The bot is not currently paused.');
+    }
 
     // We are in a voice channel, resume the song.
     await audioPlayer.resume();
     await message.channel.send('The music bot has been resumed.');
     logger.log('Music bot has been resumed.');
   }
-}
+};
