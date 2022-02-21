@@ -95,11 +95,16 @@ module.exports = class GetQuotes extends Command {
       // Get users from the database.
       let db;
       try {
-        db = new DatabaseAdaptar({server: 'localhost', username: 'root', password: 'Letmein21', database: 'hermes'});
+        db = new DatabaseAdaptar({
+            server:   process.env.db_host,
+            username: process.env.db_user,
+            password: process.env.db_password,
+            database: process.env.db
+        });
       } catch(err) {
         logger.error(err);
         db.disconnect();
-        return await message.send('There was a problem talking with the database.');
+        return await message.channel.send('There was a problem talking with the database.');
       }
 
       let quotes;

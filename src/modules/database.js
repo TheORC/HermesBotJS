@@ -30,12 +30,14 @@ class DatabaseAdaptar {
   initializeConnection(settings) {
     if(settings.server) { settings.host = settings.server; }
     if(settings.username) { settings.user = settings.username; }
-    if(!settings.port) {settings.port = 3306; }
+    if(!settings.port) { settings.port = 3306; }
     if(!settings.user) { settings.user = ''; }
     if(!settings.password){ settings.password = ''; }
 
     if(!settings.host)     { throw new Error('Unable to create database connection.  No host given.'); }
     if(!settings.database) { throw new Error('Unable to create database connection. No database given.'); }
+
+    console.log(settings);
 
     return settings;
   }
