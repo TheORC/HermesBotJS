@@ -312,6 +312,30 @@ class DatabaseAdaptar {
     return results;
   }
 
+  /**
+   * Deletes a row from the given table.
+   *
+   * @param {str} tableName Name of table to delete from
+   *
+   * @returns {this}
+   */
+  async delete(tableName) {
+
+    if(typeof(tableName) !== 'string'){
+      throw new Error('delete: Table name must be a string.');
+    }
+
+    let combinedQuery = 'DELETE FROM ' + this.escapeFieldName(tableName) + this.buildDataString(this.whereClause, ' AND ', 'WHERE');
+    let results = await new Promise((resolve, reject) => {
+      this.connection.query(combinedQuery, (err, info) => {
+        if(err) {reject(err);}
+        resolve(info);
+      });
+    });
+
+    return results;
+  }
+
 
   /**
    * Disconnect from the database.  This should be called
