@@ -2,9 +2,11 @@
 
 const Command = require('../../base/Command.js');
 const progressBar = require('../../utils/progressbar.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
+const { HEmbed } = require('../../utils/embedpage.js');
 
 const { AudioPlayerStatus } = require('@discordjs/voice');
-const { MessageEmbed } = require('discord.js');
+
 
 module.exports = class NowMusic extends Command {
 
@@ -24,34 +26,34 @@ module.exports = class NowMusic extends Command {
   async run(message){
 
     // Make sure the member is in a channel.
-    let channel;
-    if(message.member.voice){
-      channel = message.member.voice.channel;
-    } else {
-      return message.channel.send('This command can only be used when in a voice channel.');
+    if(message.member.voice.channelId === null){
+      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
     }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
     if(!audioPlayer){
-      return await message.channel.send('The bot is not currently in a channel.');
+      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
     }
 
     if(audioPlayer.getStatus() !== AudioPlayerStatus.Playing){
-      return await message.channel.send('The bot is not currently playing anything.');
+      return await clientMessenger.log(message.channel, 'The bot is not playing anything.');
     }
 
     const currentSong = audioPlayer.getCurrentSong();
     if(!currentSong){
-      return await message.channel.send('There is no current song in the audio player.');
+      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
     }
 
     const songDuration = currentSong.duration;
     const playedDuration = audioPlayer.currentResorce.playbackDuration;
 
-    const nowEmbed = new MessageEmbed()
-    .setColor('#1F8B4C')
-    .addFields(
+    const nowEmbed = new HEmbed({
+      title: '',
+      description: '',
+      inline: false
+    });
+    nowEmbed.addFields(
       {name:'**Now Playing**', value: `[${currentSong.title}](${currentSong.url})` },
       {name:`Played Duration`, value: `${progressBar(playedDuration, songDuration, 20)}`},
       {name: 'Requested By', value: `${currentSong.requester}`},

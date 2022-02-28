@@ -1,6 +1,7 @@
 "use strict";
 
 const logger   = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 const Command  = require('../../base/Command.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
@@ -24,7 +25,7 @@ module.exports = class AddQuote extends Command {
 
     // Check the command syntax
     if(args.length <= 1){
-      return await message.channel.send('Command syntax wrong.  Please refer to help.');
+      return await clientMessenger.warn(message.channel, 'Wrong syntax.  Check help for additional information.');
     }
 
     // Get command information
@@ -47,22 +48,21 @@ module.exports = class AddQuote extends Command {
       dbusers = await database.select(['iduser', 'username']).where('idguild', message.guild.id).get('users');
     } catch(err) {
       logger.error(err);
+      await clientMessenger.error(message.channel, 'Can\'t access the database. Occured attempting to access users.');
       database.disconnect();
-      return await message.channel.send('There was an error talking to the database.');
+      return;
     }
 
     // Extract user information
     const userInfo = getDatabaseCotainsUser(dbusers, userName);
-
-    // Check
     if(!userInfo){
-      return await message.channel.send('User not found.  Please check your spelling or add them.');
+      return await clientMessenger.warn(message.channel, 'User not found. Please check your spelling.\nIf they don\'t exist, consider adding them.');
     }
 
     // A user has been found.  Time to add the quote.
     try {
       // Insert
-      let info = await database.insert('quotes', {
+      await database.insert('quotes', {
         iduser: userInfo.iduser,
         idguild: message.guild.id,
         quote_data: quote,
@@ -70,11 +70,12 @@ module.exports = class AddQuote extends Command {
       });
 
       // Finished
-      await message.channel.send('Added a new quote with the id: ' + info.insertId);
+      await clientMessenger.log(message.channel, 'Quote added.');
     } catch(err) {
       logger.error(err);
+      await clientMessenger.error(message.channel, 'Can\'t access the database. Occured attempting to insert quote.');
       database.disconnect();
-      return await message.channel.send('There was an error inserting in to the database.');
+      return;
     }
 
     // Make sure we clean up after ourselves.

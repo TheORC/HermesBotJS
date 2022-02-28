@@ -1,6 +1,7 @@
 "use strict";
 
 const Command = require("../../base/Command.js");
+const clientMessenger = require('../../modules/clientmessenger.js');
 
 module.exports = class ShuffleMusic extends Command {
 
@@ -19,26 +20,22 @@ module.exports = class ShuffleMusic extends Command {
   async run(message){
 
     // Make sure the member is in a channel.
-    let channel;
-    if(message.member.voice){
-      channel = message.member.voice.channel;
-    } else {
-      return message.channel.send('This command can only be used when in a voice channel.');
+    if(message.member.voice.channelId === null){
+      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
     }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
     if(!audioPlayer){
-      return await message.channel.send('The bot is not currently in a channel.');
+      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
     }
 
-    // Make syre there are songs to be shuffled.
     if(audioPlayer.getQueue().length === 0){
-      return await message.channel.send('There are no songs in the queue.');
+      return await clientMessenger.log(message.channel, 'The music queue is empty.');
     }
 
     // We are in a voice channel, pause the song
     await audioPlayer.shuffleQueue();
-    await message.channel.send('The queue has been shuffled.');
+    await clientMessenger.log(message.channel, 'The music queue has been shuffled.');
   }
 };

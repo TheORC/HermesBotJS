@@ -3,8 +3,10 @@
 const { defaultSettings } = require('../config.js');
 const logger = require('../modules/Logger.js');
 
+const { HEmbed } = require('../utils/embedpage.js')
+
 module.exports = class {
-  
+
   constructor(client) {
     this.client = client;
   }
@@ -52,8 +54,17 @@ module.exports = class {
       await cmd.run(message, args);
       logger.cmd(`${message.author.id} ran command ${cmd.help.name}`);
     } catch(e) {
+
       console.log(e);
-      message.channel.send({ content: `There was a problem with your request.\n\`\`\`${e.message}\`\`\`` })
+
+      const settings = {
+        title: '❌ Error',
+        description: `\`\`\`${e.message}\`\`\``,
+        inline: true
+      };
+      const embed = new HEmbed(settings);
+
+      message.channel.send({ embeds: [embed] })
         .catch(e => console.error("An error occurred replying on an error", e));
     }
   }

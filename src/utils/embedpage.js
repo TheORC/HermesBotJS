@@ -2,16 +2,53 @@
 
 const { MessageEmbed } = require('discord.js');
 
+
+/**
+ * PageChunk
+ *
+ * This class provides a util which can convert a list of items in 'chunks'.
+ * This is used in correlation with the `EmbedPage` to create pages.
+ */
 class PageChunk {
 
+  /**
+   * constructor - Description
+   *
+   * @param {array} items List of items to be `chuncked`
+   */
   constructor(items) {
+
+    if(items === undefined) { throw new Error('PageChunk: items can not be null'); }
+    if(typeof(items) !== 'object' || Object.prototype.toString.call(items) !== '[object Array]') {
+      throw new Error('PageChunk: `items` is required to be an array');
+    }
+
     this.items = items;
   }
 
+  /**
+   * getItems
+   *
+   * Returns the items in this chunk
+   *
+   * @returns {array} List of items
+   */
   getItems() {
     return this.items;
   }
 
+  /**
+   * @static GetChuncks
+   *
+   * This method takes a list of items and splits them into even
+   * sized `chunks`.  The last chunk in the list has
+   * size <= chunkSize
+   *
+   * @param {array} items     List of items to be `chunked`
+   * @param {number} chunkSize Size of chunks
+   *
+   * @returns {object Arrat} List of `PageChunk`
+   */
   static GetChuncks(items, chunkSize) {
 
     if(typeof(items) !== 'object' || Object.prototype.toString.call(items) !== '[object Array]'){
@@ -42,49 +79,93 @@ class PageChunk {
 
 }
 
-class EmbedPage extends MessageEmbed {
+/**
+ * HermesEmbed
+ *
+ * Base level message embed.
+ *
+ * @extends MessageEmbed
+ */
+class HEmbed extends MessageEmbed {
 
-  constructor(info, pageSize, ...args) {
+  constructor(settings, ...args){
+
     super(...args);
 
     // Apply defualt values
-    if(info === undefined) {
-      info = {};
+    if(settings === undefined) {
+      settings = {};
     }
 
-    if(!pageSize){
-      pageSize = 10;
+    if(settings.title === undefined){
+      settings.title = 'Temp Title';
     }
 
-    if(!info.title){
-      info.title = 'Temp Title';
+    if(settings.description === undefined){
+      settings.description = 'Temp Description';
     }
 
-    if(!info.description){
-      info.description = 'Temp Description';
+    if(settings.footer === undefined){
+      settings.footer = '';
     }
 
-    if(!info.footer){
-      info.footer = 'Temp Footer';
+    if(settings.inline === undefined){
+      settings.inline = false;
     }
 
-    if(!info.inline){
-      info.inline = false;
-    }
-
-    if(!info.colour){
-      info.colour = '0x1f8b4c';
+    if(settings.colour === undefined){
+      settings.colour = '0x1f8b4c';
     }
 
     // Embed information
-    this.title = info.title;
-    this.description = info.description;
-    this.footer = info.footer;
-    this.color = info.colour;
-    this.info = info;
+    this.title       = settings.title;
+    this.description = settings.description;
+    this.color       = settings.colour;
+    this.inline      = settings.inline;
+    this.footer      = { text: settings.footer };
+    this.info        = settings;
+  }
+
+
+  addItems(items) {
+    if(!items){
+      throw new Error('addItems: `items` can not be undefined.');
+    }
+
+    if(typeof(items) !== 'object' || (typeof(items) === 'object' && Object.prototype.toString.call(items) !== '[object Array]')) {
+      throw new Error('addItems: `items` is wrong type.  It must be a list.');
+    }
+
+    for(let i = 0; i < items.length; i++){
+      this.addField(items[i], items[i], this.info.inline);
+    }
+  }
+}
+
+/**
+ * EmbedPage
+ *
+ * Multiple page embed used to display large lists.
+ *
+ * @extends HermesEmbed
+ */
+class HEmbedPage  extends HEmbed {
+
+  /**
+   *
+   * @param {number}  chunkSize Size of each page
+   * @param {array}   args
+   *
+   */
+  constructor(chunkSize, ...args) {
+    super(...args);
+
+    if(typeof(chunkSize) === 'undefined' || typeof(chunkSize) !== 'number'){
+      throw new Error('EmbedPage: `chunkSize` must be a number');
+    }
 
     // Chunk information
-    this.chunkSize = pageSize;
+    this.chunkSize = chunkSize;
     this.items = null;
     this.chunks = null;
     this.currentChunk = null;
@@ -92,7 +173,6 @@ class EmbedPage extends MessageEmbed {
     // Page information
     this.currentPage = 0;
     this.maxPages = 0;
-
   }
 
   /**
@@ -100,7 +180,7 @@ class EmbedPage extends MessageEmbed {
    * items bassed on the chunk size and get the embed ready
    * for pages.
    *
-   * @param {object Array} items An array of items to include in the embed
+   * @param {array} items An array of items to include in the embed
    *
    */
   addItems(items) {
@@ -191,4 +271,4 @@ class EmbedPage extends MessageEmbed {
   }
 }
 
-module.exports = EmbedPage;
+module.exports = { HEmbed,  HEmbedPage};

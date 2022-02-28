@@ -1,6 +1,8 @@
 "use strict";
 
 const logger   = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
+
 const Command  = require('../../base/Command.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
@@ -21,7 +23,7 @@ module.exports = class GetQuotes extends Command {
   async run(message, args) {
 
     if(args.length > 1){
-      return await message.channel.send('Wrong syntax.  Check help for additional information.');
+      return await clientMessenger.warn(message.channel, 'Wrong syntax.  Check help for additional information.');
     }
 
     // Check if a username was provided
@@ -41,16 +43,15 @@ module.exports = class GetQuotes extends Command {
         dbusers = await db.select(['iduser', 'username']).where('idguild', message.guild.id).get('users');
       } catch(err) {
         logger.error(err);
+        await clientMessenger.error(message.channel, 'Can\'t access the database. Occured attempting to access users.');
         db.disconnect();
-        return await message.send('There was a problem talking with the database.');
+        return;
       }
 
       // Extract user information
       const userInfo = getDatabaseCotainsUser(dbusers, userName);
-
-      // Check
       if(!userInfo){
-        return await message.channel.send('User not found.  Please check your spelling or add them.');
+        return await clientMessenger.warn(message.channel, 'User not found. Please check your spelling.\nIf they don\'t exist, consider adding them.');
       }
 
       let quotes;
@@ -64,14 +65,15 @@ module.exports = class GetQuotes extends Command {
 
       } catch(err) {
         logger.error(err);
+        await clientMessenger.error(message.channel, 'Can\'t access the database. Occured attempting to access quotes.');
         db.disconnect();
-        return await message.channel.send('Unable to get quotes.');
+        return;
       }
 
       db.disconnect();
 
       if(quotes.length === 0){
-        return await message.channel.send('There are no quotes for this user.');
+        return await clientMessenger.log(message.channel, 'This user does not have any quotes.\nYou should add some for them.');
       }
 
       let quoteArray = [];
@@ -86,7 +88,7 @@ module.exports = class GetQuotes extends Command {
       };
 
       // Add the embed
-      await this.client.embedcontroller.addPage(message, quoteArray, settings);
+      await this.client.embedcontroller.sendEmbedPage(message, quoteArray, settings);
 
     }
     //Nothing.  Get all guild quotes.
@@ -103,8 +105,9 @@ module.exports = class GetQuotes extends Command {
         });
       } catch(err) {
         logger.error(err);
+        await clientMessenger.error(message.channel, 'Can\'t access the database.');
         db.disconnect();
-        return await message.channel.send('There was a problem talking with the database.');
+        return;
       }
 
       let quotes;
@@ -117,12 +120,13 @@ module.exports = class GetQuotes extends Command {
 
       } catch(err) {
         logger.error(err);
+        await clientMessenger.error(message.channel, 'Can\'t access the database. Occured attempting to access quotes.');
         db.disconnect();
-        return await message.channel.send('Unable to get quotes.');
+        return;
       }
 
       if(quotes.length === 0){
-        return await message.channel.send('There are no quotes.');
+        return await clientMessenger.log(message.channel, 'This user does not have any quotes.\nYou should add some for them.');
       }
 
       let quoteArray = [];
@@ -138,7 +142,7 @@ module.exports = class GetQuotes extends Command {
       };
 
       // Add the embed
-      await this.client.embedcontroller.addPage(message, quoteArray, settings);
+      await this.client.embedcontroller.sendEmbedPage(message, quoteArray, settings);
     }
   }
 };

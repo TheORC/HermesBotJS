@@ -37,8 +37,6 @@ class DatabaseAdaptar {
     if(!settings.host)     { throw new Error('Unable to create database connection.  No host given.'); }
     if(!settings.database) { throw new Error('Unable to create database connection. No database given.'); }
 
-    console.log(settings);
-
     return settings;
   }
 

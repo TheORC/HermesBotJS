@@ -1,6 +1,7 @@
 "use strict";
 
 const Command = require('../../base/Command.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 
 module.exports = class LoopMusic extends Command {
 
@@ -9,7 +10,7 @@ module.exports = class LoopMusic extends Command {
       name: "loop",
       description: "Loops the current song or playlist.",
       category: "Music Player",
-      usage: "loop [song, playlist, none]",
+      usage: "loop [song, queue, stop]",
       aliases: ['loo', 'lo']
     });
 
@@ -18,41 +19,44 @@ module.exports = class LoopMusic extends Command {
 
   async run(message, args){
 
+    // Check the command syntax
+    if(args.length !== 1){
+      return await clientMessenger.warn(message.channel, 'Wrong syntax.  Check help for additional information.');
+    }
+
     // Make sure the member is in a channel.
-    let channel;
-    if(message.member.voice){
-      channel = message.member.voice.channel;
-    } else {
-      return message.channel.send('This command can only be used when in a voice channel.');
+    if(message.member.voice.channelId === null){
+      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
     }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
     if(!audioPlayer){
-      return await message.channel.send('The bot is not currently in a channel.');
+      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
     }
 
     const command = args[0];
-
     switch (command) {
       case 'song':
         audioPlayer.setLoopSong();
-        await message.channel.send('Enabled song loop.');
+        await clientMessenger.log(message.channel, 'The current song will be looped.');
         break;
-      case 'playlist':
+      case 'queue':
+
+        // Check for at least 1 song in the queue
         if(audioPlayer.getQueue().length === 0){
-          return await message.channel.send('There needs to be at least 1 song in the queue to loop the playlist.');
+          return await clientMessenger.warn(message.channel, 'There needs to be at least 1 song in the queue to loop the queue.');
         }
 
         audioPlayer.setLoopPlaylist();
-        await message.channel.send('Enable playlist loop');
+        await clientMessenger.log(message.channel, 'The queue will be looped.');
         break;
-      case 'none':
+      case 'stop':
         audioPlayer.disableLoop();
-        await message.channel.send('Disabled song looping.');
+        await clientMessenger.log(message.channel, 'Looping has been disabled.');
         break;
       default:
-        return await message.channel.send('Unknown loop option, please use either song, playlist, or none.');
+        return await clientMessenger.warn(message.channel, 'Unknown loop option, please use either song, queue, or stop.');
     }
   }
 };

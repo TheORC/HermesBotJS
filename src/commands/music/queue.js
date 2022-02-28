@@ -1,6 +1,9 @@
 "use strict";
 
 const Command = require("../../base/Command.js");
+const clientMessenger = require('../../modules/clientmessenger.js');
+
+const { HEmbed } = require('../../utils/embedpage.js');
 
 module.exports = class QueueMusic extends Command {
 
@@ -20,35 +23,34 @@ module.exports = class QueueMusic extends Command {
   async run(message){
 
     // Make sure the member is in a channel.
-    let channel;
-    if(message.member.voice){
-      channel = message.member.voice.channel;
-    } else {
-      return message.channel.send('This command can only be used when in a voice channel.');
-    }
-
-    // Make sure the member is in a channel.
-    if(!channel){
-      return message.channel.send('This command can only be used when in a voice channel.');
+    if(message.member.voice.channelId === null){
+      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
     }
 
     // Make sure the bot is in a channel.
     const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
     if(!audioPlayer){
-      return await message.channel.send('The bot is not currently in a channel.');
+      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
     }
 
-    // We only message when there is a queue.
+    // Check that there are songs.
     if(audioPlayer.getQueue().length === 0){
-      return await message.channel.send('There are no songs in queue.');
+      return await clientMessenger.log(message.channel, 'The queue is empty.');
     }
 
+    // [Guide](https://discordjs.guide/ 'optional hovertext')
     const queue = audioPlayer.getQueue(); // []
-    const reply = queue
-        .slice(0, 5)
-				.map((track, index) => `${index + 1}) ${track.title}`)
-				.join('\n');
+    const sliceQueue = queue.slice(0, 5);
+    const reply = sliceQueue
+                  .map((track) => `[${track.title}](${track.url})`)
+                  .join('\n');
 
-		await message.reply(`${reply}`);
+    const queueEmbed = new HEmbed({
+      title: `Upcoming - Next ${sliceQueue.length}`,
+      description: reply,
+      footer: `${queue.length} song(s)`
+    });
+
+    await message.channel.send({embeds: [queueEmbed]});
   }
 };

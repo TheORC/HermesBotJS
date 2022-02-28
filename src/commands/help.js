@@ -1,6 +1,7 @@
 "use strict";
 
 const Command = require("../base/Command.js");
+const clientMessenger = require('../modules/clientmessenger.js');
 const { codeBlock } = require("@discordjs/builders");
 
 /*
@@ -53,7 +54,7 @@ module.exports = class Help extends Command {
         }
         output += `${settings.prefix}${c.help.name}${" ".repeat(longest - c.help.name.length)} :: ${c.help.description}\n`;
       });
-      message.channel.send(codeBlock("asciidoc", output));
+      await message.channel.send(codeBlock("asciidoc", output));
 
     } else {
       // Show individual command's help.
@@ -66,8 +67,11 @@ module.exports = class Help extends Command {
           command = container.commands.get(container.aliases.get(command));
         }
 
-        message.channel.send(codeBlock("asciidoc", `= ${command.help.name} = \n${command.help.description}\nusage:: ${command.help.usage}\nalises:: ${command.conf.aliases.join(", ")}`));
-      } else { return message.channel.send("No command with that name, or alias exists."); }
+        await message.channel.send(codeBlock("asciidoc", `= ${command.help.name} = \n${command.help.description}\nusage:: ${command.help.usage}\nalises:: ${command.conf.aliases.join(", ")}`));
+      } else {
+
+        return await clientMessenger.warn(message.channel, "No command with that name, or alias exists.");
+      }
     }
   }
 };

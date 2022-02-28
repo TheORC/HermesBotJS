@@ -1,6 +1,7 @@
 "use strict";
 
 const logger = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 const Command = require("../../base/Command.js");
 
 module.exports = class PlayNextMusic extends Command {
@@ -20,10 +21,13 @@ module.exports = class PlayNextMusic extends Command {
 
     // Make sure the member is in a channel.
     let channel;
-    if(message.member.voice){
+    if(message.member.voice.channelId === null){
+      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
+    }
+
+    // The user is in a channel.  Get it.
+    else{
       channel = message.member.voice.channel;
-    } else {
-      return message.channel.send('This command can only be used when in a voice channel.');
     }
 
       // The music bot is not in a channel

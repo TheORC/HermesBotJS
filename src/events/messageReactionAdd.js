@@ -1,5 +1,8 @@
 "use strict";
 
+const clientMessenger = require('../modules/clientmessenger.js');
+const logger = require('../modules/Logger.js');
+
 module.exports = class {
 
   constructor(client) {
@@ -22,8 +25,8 @@ module.exports = class {
     try {
       await this.client.embedcontroller.updatePage(reaction.message.id, reaction);
     }catch(err){
-      console.log(err);
-      await reaction.message.channel.send('An error occured processing the request.');
+      logger.error(err);
+      await clientMessenger.error(reaction.message.channel, 'An error occured processing the request.');
     }
 
     // This message has multiple pages.  Lets handle the event.

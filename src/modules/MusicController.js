@@ -3,6 +3,8 @@
 const AudioPlayer = require('./AudioPlayer');
 const Song = require('./song.js');
 const logger = require('./Logger.js');
+const clientMessenger = require('./clientmessenger.js');
+const { HEmbed } = require('../utils/embedpage.js');
 const { isUrl } = require('../utils/function.js');
 const YouTube = require("youtube-sr").default;
 const { joinVoiceChannel, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
@@ -137,34 +139,47 @@ class MusicController {
 
     if(!audioPlayer){
       logger.error('No audio player created for bot connection!');
-      return await message.channel.send('And error occured connecting the bot.');
+      return await clientMessenger.error(message.channel, 'And error occured connecting the bot.');
     }
 
-    try{
+    try {
       const songResults = await this.getAudioSources(message, search);
 
       // Make sure we have songs
       if(songResults.length === 0){
-        return message.channel.send(`Oh... That song did not load.  Please try again.`);
+        return await clientMessenger.error(message.channel, `Oh... That song did not load.  Please try again.`);
       }
 
       // Only 1 song was added
-      if(songResults.length === 1){
-        await message.channel.send(`Adding ***${songResults[0].title}*** to the queue.`);
+      if(songResults.length === 1) {
+
+        // Alert the user
+        const newSongEmbed = new HEmbed({
+          title: 'Adding Song',
+          description: `[${songResults[0].title}](${songResults[0].url})`
+        });
+        await message.channel.send({embeds: [newSongEmbed]});
+
+        // Add song to queue
         await audioPlayer.enqueue(songResults[0]);
       }
 
       // A playlist was added
-      else{
-        await message.channel.send(`Adding ${songResults.length} songs to the queue.`);
-        for(const song of songResults){
+      else {
+        const newPlaylistEmbed = new HEmbed({
+          title: 'Adding Playlist',
+          description: `${songResults.length} song(s) added to queue.`
+        });
+        await message.channel.send({embeds: [newPlaylistEmbed]});
+
+        for(const song of songResults) {
           await audioPlayer.enqueue(song);
         }
       }
 
-    }catch(error){
-      console.log(error);
-      return message.channel.send(`An error occured processing that song.  Please try again.`);
+    } catch(error) {
+      logger.error(error);
+      return await clientMessenger.error(message.channel, `An error occured processing that song.  Please try again.`);
     }
   }
 
@@ -175,7 +190,7 @@ class MusicController {
 
     if(!audioPlayer){
       logger.error('No audio player created for bot connection!');
-      return await message.channel.send('And error occured connecting the bot.');
+      return await clientMessenger.error(message.channel, 'And error occured connecting the bot.');
     }
 
     try{
@@ -183,26 +198,40 @@ class MusicController {
 
       // Make sure we have songs
       if(songResults.length === 0){
-        return message.channel.send(`Oh... That song did not load.  Please try again.`);
+        return await clientMessenger.error(message.channel, `Oh... That song did not load.  Please try again.`);
       }
 
       // Only 1 song was added
       if(songResults.length === 1){
-        await message.channel.send(`Adding ***${songResults[0].title}*** to the start of the queue.`);
+
+        //Alert the user
+        const newSongEmbed = new HEmbed({
+          title: 'Adding Song',
+          description: `[${songResults[0].title}](${songResults[0].url})`
+        });
+        await message.channel.send({embeds: [newSongEmbed]});
+
+        // Add the song
         await audioPlayer.enqueueNext(songResults[0]);
       }
 
       // A playlist was added
       else{
-        await message.channel.send(`Adding ${songResults.length} songs to the start of the queue.`);
+
+        const newPlaylistEmbed = new HEmbed({
+          title: 'Adding Playlist',
+          description: `${songResults.length} song(s) added to queue.`
+        });
+        await message.channel.send({embeds: [newPlaylistEmbed]});
+
         for(const song of songResults){
           await audioPlayer.enqueueNext(song);
         }
       }
 
     }catch(error){
-      console.log(error);
-      return message.channel.send(`An error occured processing that song.  Please try again.`);
+      logger.error(error);
+      return await clientMessenger.error(message.channel, `An error occured processing that song.  Please try again.`);
     }
   }
 
@@ -210,7 +239,7 @@ class MusicController {
     const audioPlayer = this.getAudioPlayer(guildid);
 
     if(!audioPlayer){
-      return console.log('This should not happen...');
+      return logger.error('This should not happen...');
     }
 
     audioPlayer.voiceConnection.destroy();
@@ -222,12 +251,13 @@ class MusicController {
     const audioPlayer = this.getAudioPlayer(message.guild.id);
 
     if(!audioPlayer){
-      return message.channel.send('The bot is not playing any music.');
+      logger.error('No audio player found.');
+      return await clientMessenger.error(message.channel, 'The music bot is not in a channel.');
     }
 
     audioPlayer.voiceConnection.destroy();
     delete this.players[message.guild.id];
-    await message.channel.send({ content: `Left channel!`, ephemeral: true });
+    await clientMessenger.log(message.channel, 'Left channel!');
   }
 }
 
