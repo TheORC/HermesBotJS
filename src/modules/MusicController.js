@@ -108,7 +108,7 @@ class MusicController {
     return results;
   }
 
-  async ConnectToChannel(message, channel){
+  async ConnectToChannel(channel) {
 
     // Remove the audio device if it already exists.
     this.removeAudioPlayer(channel.guild.id);
@@ -134,12 +134,21 @@ class MusicController {
 
   async Play(message, search) {
 
+    let channel, isInteraction;
+    if(message.type && message.type === 'APPLICATION_COMMAND') {
+      isInteraction = true;
+      channel = message;
+    }else{
+      isInteraction = false;
+      channel = message.channel;
+    }
+
     // Get the audio player for this guild
     let audioPlayer = this.getAudioPlayer(message.guild.id);
 
     if(!audioPlayer){
       logger.error('No audio player created for bot connection!');
-      return await clientMessenger.error(message.channel, 'And error occured connecting the bot.');
+      return await clientMessenger.error(channel, 'And error occured connecting the bot.');
     }
 
     try {
@@ -147,7 +156,7 @@ class MusicController {
 
       // Make sure we have songs
       if(songResults.length === 0){
-        return await clientMessenger.error(message.channel, `Oh... That song did not load.  Please try again.`);
+        return await clientMessenger.error(channel, `Oh... That song did not load.  Please try again.`);
       }
 
       // Only 1 song was added
@@ -158,7 +167,13 @@ class MusicController {
           title: 'Adding Song',
           description: `[${songResults[0].title}](${songResults[0].url})`
         });
-        await message.channel.send({embeds: [newSongEmbed]});
+
+        if(isInteraction){
+          await channel.reply({embeds: [newSongEmbed]});
+        } else {
+          await channel.send({embeds: [newSongEmbed]});
+        }
+
 
         // Add song to queue
         await audioPlayer.enqueue(songResults[0]);
@@ -170,7 +185,13 @@ class MusicController {
           title: 'Adding Playlist',
           description: `${songResults.length} song(s) added to queue.`
         });
-        await message.channel.send({embeds: [newPlaylistEmbed]});
+
+        if(isInteraction){
+          await channel.reply({embeds: [newPlaylistEmbed]});
+        }else{
+          await channel.send({embeds: [newPlaylistEmbed]});
+        }
+
 
         for(const song of songResults) {
           await audioPlayer.enqueue(song);
@@ -179,18 +200,27 @@ class MusicController {
 
     } catch(error) {
       logger.error(error);
-      return await clientMessenger.error(message.channel, `An error occured processing that song.  Please try again.`);
+      return await clientMessenger.error(channel, `An error occured processing that song.  Please try again.`);
     }
   }
 
   async PlayNext(message, search) {
+
+    let channel, isInteraction;
+    if(message.type && message.type === 'APPLICATION_COMMAND') {
+      isInteraction = true;
+      channel = message;
+    }else{
+      isInteraction = false;
+      channel = message.channel;
+    }
 
     // Get the audio player for this guild
     let audioPlayer = this.getAudioPlayer(message.guild.id);
 
     if(!audioPlayer){
       logger.error('No audio player created for bot connection!');
-      return await clientMessenger.error(message.channel, 'And error occured connecting the bot.');
+      return await clientMessenger.error(channel, 'And error occured connecting the bot.');
     }
 
     try{
@@ -198,7 +228,7 @@ class MusicController {
 
       // Make sure we have songs
       if(songResults.length === 0){
-        return await clientMessenger.error(message.channel, `Oh... That song did not load.  Please try again.`);
+        return await clientMessenger.error(channel, `Oh... That song did not load.  Please try again.`);
       }
 
       // Only 1 song was added
@@ -209,20 +239,30 @@ class MusicController {
           title: 'Adding Song',
           description: `[${songResults[0].title}](${songResults[0].url})`
         });
-        await message.channel.send({embeds: [newSongEmbed]});
+
+        if(isInteraction){
+          await channel.reply({ embeds: [newSongEmbed] });
+        }else{
+          await channel.send({ embeds: [newSongEmbed] });
+        }
 
         // Add the song
         await audioPlayer.enqueueNext(songResults[0]);
       }
 
       // A playlist was added
-      else{
+      else {
 
         const newPlaylistEmbed = new HEmbed({
           title: 'Adding Playlist',
           description: `${songResults.length} song(s) added to queue.`
         });
-        await message.channel.send({embeds: [newPlaylistEmbed]});
+
+        if(isInteraction){
+          await channel.reply({ embeds: [newPlaylistEmbed] });
+        }else{
+          await message.channel.send({embeds: [newPlaylistEmbed]});
+        }
 
         for(const song of songResults){
           await audioPlayer.enqueueNext(song);
@@ -231,7 +271,7 @@ class MusicController {
 
     }catch(error){
       logger.error(error);
-      return await clientMessenger.error(message.channel, `An error occured processing that song.  Please try again.`);
+      return await clientMessenger.error(channel, `An error occured processing that song.  Please try again.`);
     }
   }
 
@@ -248,16 +288,23 @@ class MusicController {
 
   async Stop(message){
 
+    let channel;
+    if(message.type && message.type === 'APPLICATION_COMMAND') {
+      channel = message;
+    }else{
+      channel = message.channel;
+    }
+
     const audioPlayer = this.getAudioPlayer(message.guild.id);
 
     if(!audioPlayer){
       logger.error('No audio player found.');
-      return await clientMessenger.error(message.channel, 'The music bot is not in a channel.');
+      return await clientMessenger.error(channel, 'The music bot is not in a channel.');
     }
 
     audioPlayer.voiceConnection.destroy();
     delete this.players[message.guild.id];
-    await clientMessenger.log(message.channel, 'Left channel!');
+    await clientMessenger.log(channel, 'Left channel!');
   }
 }
 

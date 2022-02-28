@@ -1,63 +1,62 @@
-"use strict";
-
+const Slash = require('../../base/Slash.js');
 const logger = require('../../modules/Logger.js');
 const clientMessenger = require('../../modules/clientmessenger.js');
-const Command = require("../../base/Command.js");
 
 const { AudioPlayerStatus } = require('@discordjs/voice');
 
-module.exports = class PlayMusic extends Command {
+module.exports = class SlashPlay extends Slash {
 
-  constructor(client){
+  constructor(client) {
     super(client, {
       name: "play",
-      description: "Plays a song in your channel.",
-      category: "Music Player",
-      usage: "play [song name or url]",
-      aliases: ["p", "pl"]
+      description: "Simple play command.",
+      category: "Test Catagory",
+      usage: "/play"
     });
-    this.client = client;
+
+    this.slashCommand.addStringOption(option =>
+		    option.setName('search')
+  			.setDescription('The song search or url.'));
   }
 
-  async run(message, args){
+  async run(interaction){
 
     // Make sure the member is in a channel.
     let channel;
-    if(message.member.voice.channelId === null){
-      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
+    if(interaction.member.voice.channelId === null){
+      return await clientMessenger.warn(interaction, 'This command can only be used from a voice channel.');
     }
 
     // The user is in a channel.  Get it.
     else{
-      channel = message.member.voice.channel;
+      channel = interaction.member.voice.channel;
     }
 
-    // Check to see if this is a resume attempt
-    if(args.length === 0) {
-
+    // Check if a url was provided
+    if(interaction.options.getString('search') === null){
       // Make sure the bot is in a channel.
-      const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
+      const audioPlayer = await this.client.musicplayer.getAudioPlayer(interaction.guild.id);
       if(!audioPlayer){
-        return await clientMessenger.log(message.channel, 'The bot is not currently in a channel.');
+        return await clientMessenger.log(interaction, 'The bot is not currently in a channel.');
       }
 
       // Make sure the bot is playing a song.
       if(audioPlayer.getStatus() !== AudioPlayerStatus.Paused){
-        return await clientMessenger.log(message.channel, 'The bot is already playing.');
+        return await clientMessenger.log(interaction, 'The bot is already playing.');
       }
 
       // We are in a voice channel, resume the song.
       await audioPlayer.resume();
-      await clientMessenger.log(message.channel, 'The bot has been resumed.');
+      await clientMessenger.log(interaction, 'The bot has resumed.');
       logger.log('Music bot has been resumed.');
     }
 
-    // Connect the bot and play a song.
+    // Url provided
     else {
       // The music bot is not in a channel
       let botVoiceChannel;
-      if(message.guild.me.voice){
-        botVoiceChannel = message.guild.me.voice.channel;
+      if(interaction.guild.me.voice){
+        botVoiceChannel = interaction.guild.me.voice.channel;
       }
 
       // Check if the bot is in a channel
@@ -69,7 +68,7 @@ module.exports = class PlayMusic extends Command {
       }
 
       // Get the audio player
-      const audioPlayer = this.client.musicplayer.getAudioPlayer(message.channel.guild.id);
+      const audioPlayer = this.client.musicplayer.getAudioPlayer(interaction.channel.guild.id);
       if(!audioPlayer){
 
         // This is true when the server restarts and the bot has not yet left the channel.
@@ -78,7 +77,7 @@ module.exports = class PlayMusic extends Command {
       }
 
       // We are in a voice channel
-      await this.client.musicplayer.Play(message, args.join(' '));
+      await this.client.musicplayer.Play(interaction, interaction.options.getString('search'));
     }
   }
 };

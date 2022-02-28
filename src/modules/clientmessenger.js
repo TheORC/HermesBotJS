@@ -26,7 +26,12 @@ exports.log = async (channel, content, type = MessageEnum.LOG) => {
   }
 
   try {
-    await channel.send({embeds: [embed]});
+    if(channel.type && channel.type === 'APPLICATION_COMMAND') {
+      await channel.reply({ embeds: [embed] });
+    }else{
+      await channel.send({embeds: [embed]});
+    }
+
   } catch(err){
     console.log(err);
   }

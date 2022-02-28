@@ -1,46 +1,40 @@
-"use strict";
-
-const Command = require('../../base/Command.js');
+const Slash = require('../../base/Slash.js');
 const progressBar = require('../../utils/progressbar.js');
 const clientMessenger = require('../../modules/clientmessenger.js');
 const { HEmbed } = require('../../utils/embedpage.js');
 const { AudioPlayerStatus } = require('@discordjs/voice');
 
-module.exports = class NowMusic extends Command {
+module.exports = class SlashNow extends Slash {
 
-  constructor(client){
-
+  constructor(client) {
     super(client, {
       name: "now",
       description: "Shows the current song being played.",
-      category: "Music Player",
-      usage: "now",
-      aliases: ['nowplaying', 'np']
+      category: "Test Catagory",
+      usage: "/now"
     });
-
-    this.client = client;
   }
 
-  async run(message){
+  async run(interaction) {
 
     // Make sure the member is in a channel.
-    if(message.member.voice.channelId === null){
-      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
+    if(interaction.member.voice.channelId === null){
+      return await clientMessenger.warn(interaction, 'This command can only be used from a voice channel.');
     }
 
     // Make sure the bot is in a channel.
-    const audioPlayer = await this.client.musicplayer.getAudioPlayer(message.guild.id);
+    const audioPlayer = await this.client.musicplayer.getAudioPlayer(interaction.guild.id);
     if(!audioPlayer){
-      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
+      return await clientMessenger.log(interaction, 'The music bot is not playing anything.');
     }
 
     if(audioPlayer.getStatus() !== AudioPlayerStatus.Playing){
-      return await clientMessenger.log(message.channel, 'The bot is not playing anything.');
+      return await clientMessenger.log(interaction, 'The bot is not playing anything.');
     }
 
     const currentSong = audioPlayer.getCurrentSong();
     if(!currentSong){
-      return await clientMessenger.log(message.channel, 'The music bot is not playing anything.');
+      return await clientMessenger.log(interaction, 'The music bot is not playing anything.');
     }
 
     const songDuration = currentSong.duration;
@@ -57,6 +51,6 @@ module.exports = class NowMusic extends Command {
       {name: 'Requested By', value: `${currentSong.requester}`},
     );
 
-    await message.channel.send({embeds: [nowEmbed]});
+    await interaction.reply({ embeds: [nowEmbed] });
   }
 };
