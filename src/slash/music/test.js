@@ -12,6 +12,7 @@ module.exports = class Test extends Slash {
   }
 
   async run(interaction){
-    await interaction.reply('Now testing :o');
+    await interaction.deferReply();
+    console.log(interaction);
   }
 };

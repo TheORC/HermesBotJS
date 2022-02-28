@@ -19,7 +19,7 @@ module.exports = class SlashPlay extends Slash {
   			.setDescription('The song search or url.'));
   }
 
-  async run(interaction){
+  async run(interaction) {
 
     // Make sure the member is in a channel.
     let channel;

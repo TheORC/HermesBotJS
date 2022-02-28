@@ -53,6 +53,9 @@ module.exports = class SlashPlayNext extends Slash {
       await this.client.musicplayer.ConnectToChannel(channel);
     }
 
+    // This can take longer than 3 seconds to perform
+    await interaction.deferReply();
+
     // We are in a voice channel
     await this.client.musicplayer.PlayNext(interaction, interaction.options.getString('search'));
   }

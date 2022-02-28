@@ -169,7 +169,7 @@ class MusicController {
         });
 
         if(isInteraction){
-          await channel.reply({embeds: [newSongEmbed]});
+          await channel.editReply({embeds: [newSongEmbed]});
         } else {
           await channel.send({embeds: [newSongEmbed]});
         }
@@ -187,7 +187,7 @@ class MusicController {
         });
 
         if(isInteraction){
-          await channel.reply({embeds: [newPlaylistEmbed]});
+          await channel.editReply({embeds: [newPlaylistEmbed]});
         }else{
           await channel.send({embeds: [newPlaylistEmbed]});
         }
@@ -241,7 +241,7 @@ class MusicController {
         });
 
         if(isInteraction){
-          await channel.reply({ embeds: [newSongEmbed] });
+          await channel.editReply({ embeds: [newSongEmbed] });
         }else{
           await channel.send({ embeds: [newSongEmbed] });
         }
@@ -259,7 +259,7 @@ class MusicController {
         });
 
         if(isInteraction){
-          await channel.reply({ embeds: [newPlaylistEmbed] });
+          await channel.editReply({ embeds: [newPlaylistEmbed] });
         }else{
           await message.channel.send({embeds: [newPlaylistEmbed]});
         }
