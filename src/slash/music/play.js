@@ -16,7 +16,8 @@ module.exports = class SlashPlay extends Slash {
 
     this.slashCommand.addStringOption(option =>
 		    option.setName('search')
-  			.setDescription('The song search or url.'));
+        .setRequired(true)
+  			.setDescription('The song search or url'));
   }
 
   async run(interaction) {
@@ -32,55 +33,33 @@ module.exports = class SlashPlay extends Slash {
       channel = interaction.member.voice.channel;
     }
 
-    // Check if a url was provided
-    if(interaction.options.getString('search') === null){
-      // Make sure the bot is in a channel.
-      const audioPlayer = await this.client.musicplayer.getAudioPlayer(interaction.guild.id);
-      if(!audioPlayer){
-        return await clientMessenger.log(interaction, 'The bot is not currently in a channel.');
-      }
-
-      // Make sure the bot is playing a song.
-      if(audioPlayer.getStatus() !== AudioPlayerStatus.Paused){
-        return await clientMessenger.log(interaction, 'The bot is already playing.');
-      }
-
-      // We are in a voice channel, resume the song.
-      await audioPlayer.resume();
-      await clientMessenger.log(interaction, 'The bot has resumed.');
-      logger.log('Music bot has been resumed.');
+    // The music bot is not in a channel
+    let botVoiceChannel;
+    if(interaction.guild.me.voice){
+      botVoiceChannel = interaction.guild.me.voice.channel;
     }
 
-    // Url provided
-    else {
-      // The music bot is not in a channel
-      let botVoiceChannel;
-      if(interaction.guild.me.voice){
-        botVoiceChannel = interaction.guild.me.voice.channel;
-      }
+    // Check if the bot is in a channel
+    if(!botVoiceChannel || botVoiceChannel.id !== channel.id){
 
-      // Check if the bot is in a channel
-      if(!botVoiceChannel || botVoiceChannel.id !== channel.id){
-
-        // The bot is either not conencted or in another channel.
-        logger.log('Connecting music bot');
-        await this.client.musicplayer.ConnectToChannel(channel);
-      }
-
-      // Get the audio player
-      const audioPlayer = this.client.musicplayer.getAudioPlayer(interaction.channel.guild.id);
-      if(!audioPlayer){
-
-        // This is true when the server restarts and the bot has not yet left the channel.
-        logger.warn('Attempting to connect bot in rare case.');
-        await this.client.musicplayer.ConnectToChannel(channel);
-      }
-
-      // This can take longer than 3 seconds to perform
-      await interaction.deferReply();
-
-      // We are in a voice channel
-      await this.client.musicplayer.Play(interaction, interaction.options.getString('search'));
+      // The bot is either not conencted or in another channel.
+      logger.log('Connecting music bot');
+      await this.client.musicplayer.ConnectToChannel(channel);
     }
+
+    // Get the audio player
+    const audioPlayer = this.client.musicplayer.getAudioPlayer(interaction.channel.guild.id);
+    if(!audioPlayer){
+
+      // This is true when the server restarts and the bot has not yet left the channel.
+      logger.warn('Attempting to connect bot in rare case.');
+      await this.client.musicplayer.ConnectToChannel(channel);
+    }
+
+    // This can take longer than 3 seconds to perform
+    await interaction.deferReply();
+
+    // We are in a voice channel
+    await this.client.musicplayer.Play(interaction, interaction.options.getString('search'));
   }
 };
