@@ -39,6 +39,8 @@ module.exports = class SlashAddQuote extends Slash {
       const quoteUser = interaction.options.getUser('person')
       const quoteData = interaction.options.getString('quote')
 
+      console.log(quoteUser.id)
+
       // Add the quote
       await database.insert('user_quotes', {
         guildid: interaction.guild.id,
