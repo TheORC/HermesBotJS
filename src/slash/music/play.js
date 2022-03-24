@@ -2,8 +2,6 @@ const Slash = require('../../base/Slash.js');
 const logger = require('../../modules/Logger.js');
 const clientMessenger = require('../../modules/clientmessenger.js');
 
-const { AudioPlayerStatus } = require('@discordjs/voice');
-
 module.exports = class SlashPlay extends Slash {
 
   constructor(client) {
