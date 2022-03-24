@@ -1,6 +1,7 @@
 "use strict";
 
 const logger = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 const Command = require("../../base/Command.js");
 
 module.exports = class PlayNextMusic extends Command {
@@ -20,10 +21,13 @@ module.exports = class PlayNextMusic extends Command {
 
     // Make sure the member is in a channel.
     let channel;
-    if(message.member.voice){
+    if(message.member.voice.channelId === null){
+      return await clientMessenger.warn(message.channel, 'This command can only be used from a voice channel.');
+    }
+
+    // The user is in a channel.  Get it.
+    else{
       channel = message.member.voice.channel;
-    } else {
-      return message.channel.send('This command can only be used when in a voice channel.');
     }
 
       // The music bot is not in a channel
@@ -37,7 +41,7 @@ module.exports = class PlayNextMusic extends Command {
 
       // The bot is either not conencted or in another channel.
       logger.log('Connecting music bot');
-      await this.client.musicplayer.ConnectToChannel(message, channel);
+      await this.client.musicplayer.ConnectToChannel(channel);
     }
 
     // Get the audio player
@@ -46,7 +50,7 @@ module.exports = class PlayNextMusic extends Command {
 
       // This is true when the server restarts and the bot has not yet left the channel.
       logger.warn('Attempting to connect bot in rare case.');
-      await this.client.musicplayer.ConnectToChannel(message, channel);
+      await this.client.musicplayer.ConnectToChannel(channel);
     }
 
     // We are in a voice channel

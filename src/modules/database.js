@@ -30,7 +30,7 @@ class DatabaseAdaptar {
   initializeConnection(settings) {
     if(settings.server) { settings.host = settings.server; }
     if(settings.username) { settings.user = settings.username; }
-    if(!settings.port) {settings.port = 3306; }
+    if(!settings.port) { settings.port = 3306; }
     if(!settings.user) { settings.user = ''; }
     if(!settings.password){ settings.password = ''; }
 

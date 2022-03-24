@@ -1,10 +1,11 @@
 "use strict";
 
 const logger   = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 const Command  = require('../../base/Command.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
-const { MessageEmbed } = require('discord.js');
+const { HEmbed } = require('../../utils/embedpage.js');
 
 module.exports = class GetQuotes extends Command {
 
@@ -25,7 +26,7 @@ module.exports = class GetQuotes extends Command {
     try {
 
       db = new DatabaseAdaptar({
-          server: 'localhost',
+          server:   process.env.db_host,
           username: process.env.db_user,
           password: process.env.db_password,
           database: process.env.db
@@ -33,23 +34,27 @@ module.exports = class GetQuotes extends Command {
 
       dbusers = await db.select(['username']).where('idguild', message.guild.id).get('users');
     } catch(err) {
+
+      logger.error(err);
+      await clientMessenger.error(message.channel, 'Can\'t access the database. Occured attempting to access users.');
+
       if(db !== undefined){
         db.disconnect();
       }
-      logger.error(err);
-      return await message.send('There was a problem talking with the database.');
+
+      return;
     }
 
     db.disconnect();
 
-    let embed = new MessageEmbed();
-    embed.setTitle('Guild Users');
-    embed.setColor('0x1f8b4c');
+    const reply = dbusers
+                  .map((user) => `${user.username}`)
+                  .join('\n');
+    let embedUsers = new HEmbed({
+      title: 'Guild Users',
+      description: reply
+    });
 
-    for(let i = 0; i < dbusers.length; i++) {
-      embed.addField('\u200b', `> ${dbusers[i].username}`);
-    }
-
-    await message.channel.send({embeds: [embed]});
+    await message.channel.send({ embeds: [embedUsers]});
   }
 };

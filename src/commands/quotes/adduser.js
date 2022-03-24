@@ -2,6 +2,7 @@
 
 const Command  = require('../../base/Command.js');
 const logger   = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
 const { getDatabaseCotainsUser } = require('../../utils/function.js');
@@ -23,7 +24,7 @@ module.exports = class AddQuote extends Command {
   async run(message, args) {
 
     if(args.length > 1 || args.length === 0){
-      return await message.channel.send('Command syntax wrong.  Please refer to help.');
+      return await clientMessenger.warn(message.channel, 'Wrong syntax.  Check help for additional information.');
     }
 
     // Get command information
@@ -35,7 +36,7 @@ module.exports = class AddQuote extends Command {
 
       // Create the connections
       database = new DatabaseAdaptar({
-          server: 'localhost',
+          server:   process.env.db_host,
           username: process.env.db_user,
           password: process.env.db_password,
           database: process.env.db
@@ -45,8 +46,9 @@ module.exports = class AddQuote extends Command {
       dbusers = await database.select(['iduser', 'username']).where('idguild', message.guild.id).get('users');
     } catch(err) {
       logger.error(err);
+      await clientMessenger.error(message.channel, 'There was an error talking to the database.');
       database.disconnect();
-      return await message.channel.send('There was an error talking to the database.');
+      return;
     }
 
     // Extract user information
@@ -54,7 +56,7 @@ module.exports = class AddQuote extends Command {
 
     // Check
     if(userInfo){
-      return await message.channel.send('This user is already in the database.');
+      return await clientMessenger.warn(message.channel, 'User already exists.');
     }
 
     // A user has been found.  Time to add the quote.
@@ -66,11 +68,12 @@ module.exports = class AddQuote extends Command {
       });
 
       // Finished
-      await message.channel.send(`Added user (${userName}).`);
+      await clientMessenger.log(message.channel, `Added user **${userName}**.`);
     } catch(err) {
       logger.error(err);
+      await clientMessenger.error(message.channel, 'There was an error talking to the database.');
       database.disconnect();
-      return await message.channel.send('There was an error inserting in to the database.');
+      return;
     }
 
     // Make sure we clean up after ourselves.

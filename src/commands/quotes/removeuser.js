@@ -1,6 +1,7 @@
 "use strict";
 
 const logger   = require('../../modules/Logger.js');
+const clientMessenger = require('../../modules/clientmessenger.js');
 const Command  = require('../../base/Command.js');
 
 const { DatabaseAdaptar } = require('../../modules/database.js');
@@ -22,22 +23,27 @@ module.exports = class RemoveUser extends Command {
   async run(message, args) {
 
     if(args.length === 0 || args.length > 1) {
-      return await message.channel.send('Command syntax wrong.  Please refer to help.');
+      return await clientMessenger.warn(message.channel, 'Wrong syntax.  Check help for additional information.');
     }
 
     let database;
     try {
 
       database = new DatabaseAdaptar({
-          server: 'localhost',
+          server:   process.env.db_host,
           username: process.env.db_user,
           password: process.env.db_password,
           database: process.env.db
       });
 
-    }catch(err){
-      logger.err(err);
-      return await message.channel.send('There was an error talking to the database.');
+    } catch(err) {
+      logger.error(err);
+      await clientMessenger.error(message.channel, 'Can\'t access the database.');
+
+      if(database !== undefined){
+        database.disconnect();
+      }
+      return;
     }
 
     try {
@@ -48,17 +54,17 @@ module.exports = class RemoveUser extends Command {
 
       // Check to see if a user was found
       if(dbUser.length === 0){
-        await message.channel.send(`User with username ${userName} was not found.  Check your spelling.`);
+        await clientMessenger.warn(message.channel, `User with username ${userName} was not found.  Check your spelling.`);
         database.disconnect();
         return;
       }
 
       await database.where('username', userName).where('idguild', message.guild.id).delete('users');
-      await message.channel.send('User has been removed.');
+      await clientMessenger.log(message.channel, 'User has been removed.');
 
     } catch(err) {
-      logger.err(err);
-      await message.channel.send('There was an error talking to the database');
+      logger.error(err);
+      await clientMessenger.error(message.channel, 'There was an error talking to the database');
     }
 
     database.disconnect();
