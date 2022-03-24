@@ -57,14 +57,12 @@ const init = async () => {
   }
 
   // Load any slash commands
-  const slashCommands = fs.readdirSync('./src/slash/').filter(() => fs.endsWith('.js'));
-
+  const slashCommands = await asyncSubFileSearch('./src/slash/', 'slash');
   for (const file of slashCommands){
     const command = new (require(`./slash/${file}`))(client);
-    const commandName = file.split(".")[0];
     // Now set the name of the command with it's properties.
     client.container.slashcmds.set(command.commandData.name, command);
-    log(`Loading Slash command: ${commandName}.`);
+    log(`Loading Slash command: ${command.commandData.name}.`);
   }
 
   // Load any events

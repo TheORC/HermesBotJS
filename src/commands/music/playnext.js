@@ -41,7 +41,7 @@ module.exports = class PlayNextMusic extends Command {
 
       // The bot is either not conencted or in another channel.
       logger.log('Connecting music bot');
-      await this.client.musicplayer.ConnectToChannel(message, channel);
+      await this.client.musicplayer.ConnectToChannel(channel);
     }
 
     // Get the audio player
@@ -50,7 +50,7 @@ module.exports = class PlayNextMusic extends Command {
 
       // This is true when the server restarts and the bot has not yet left the channel.
       logger.warn('Attempting to connect bot in rare case.');
-      await this.client.musicplayer.ConnectToChannel(message, channel);
+      await this.client.musicplayer.ConnectToChannel(channel);
     }
 
     // We are in a voice channel

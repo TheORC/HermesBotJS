@@ -26,7 +26,19 @@ exports.log = async (channel, content, type = MessageEnum.LOG) => {
   }
 
   try {
-    await channel.send({embeds: [embed]});
+    if(channel.type && channel.type === 'APPLICATION_COMMAND') {
+
+      // Make sure this is not a deferal
+      if(channel.deferred){
+        await channel.editReply({ embeds: [embed] });
+      }else{
+        await channel.reply({ embeds: [embed] });
+      }
+
+    }else{
+      await channel.send({embeds: [embed]});
+    }
+
   } catch(err){
     console.log(err);
   }

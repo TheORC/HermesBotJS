@@ -3,7 +3,7 @@
 const { defaultSettings } = require('../config.js');
 const logger = require('../modules/Logger.js');
 
-const { HEmbed } = require('../utils/embedpage.js')
+const { HEmbed } = require('../utils/embedpage.js');
 
 module.exports = class {
 

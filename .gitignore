@@ -1,5 +1,6 @@
 #Extra
 package-lock.json
+src/test.js
 
 # Logs
 logs
