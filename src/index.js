@@ -16,7 +16,7 @@ require("dotenv").config();
 const { Client, Collection } = require('discord.js');
 
 // Import bot settings
-const { intents, partials } = require('./config.js');
+const { intents, partials, app_settings } = require('./config.js');
 
 // Import Music Client
 const MusicController = require('./modules/MusicController.js');
@@ -81,9 +81,8 @@ const init = async () => {
   // Join the active thread
   client.on('threadCreate', (thread) => thread.join());
 
-
   // Start the client
-  client.login(process.env.token);
+  client.login(app_settings.discord_token);
 
   log('Client has started.');
 };

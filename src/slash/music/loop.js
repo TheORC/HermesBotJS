@@ -16,9 +16,11 @@ module.exports = class SlashLoop extends Slash {
 		    option.setName('type')
   			.setDescription('Loop song or playlist')
   			.setRequired(true)
-  			.addChoice('Song', 'song')
-  			.addChoice('Queue', 'queue')
-        .addChoice('Stop', 'stop'));
+  			.addChoices(
+          { name: 'Song', value: 'song' },
+          { name: 'Queue', value: 'queue' },
+          { name: 'Stop', value: 'stop' }
+          ));
   }
 
   async run(interaction) {

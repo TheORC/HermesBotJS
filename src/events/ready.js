@@ -1,7 +1,7 @@
 "use strict";
 const logger = require("../modules/Logger.js");
 
-const { defaultSettings } = require('../config.js');
+const { defaultSettings, app_settings } = require('../config.js');
 const { ready } = require('../modules/Logger.js');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -29,10 +29,10 @@ module.exports = class {
   async registerGuildSlashCommands() {
 
     // Place your client and guild ids here
-    const clientId = process.env.client_id;
-    const guildId = process.env.guild_id;
+    const clientId = app_settings.discord_client_id;
+    const guildId = app_settings.discord_guild_id;
 
-    const rest = new REST({ version: '9' }).setToken(process.env.token);
+    const rest = new REST({ version: '9' }).setToken(app_settings.discord_token);
 
     let commands = [];
     for(const key of this.client.container.slashcmds) {
@@ -44,15 +44,13 @@ module.exports = class {
   		logger.log('Started refreshing application (/) commands.');
 
   		await rest.put(
-  			Routes.applicationGuildCommands(clientId, guildId),
-  			{ body: commands },
+  			Routes.applicationGuildCommands(clientId, guildId), { body: commands },
   		);
 
 	    logger.log('Successfully reloaded application (/) commands.');
+      
   	} catch (error) {
 		  logger.error(error);
   	}
-
-
   }
 };
